@@ -946,31 +946,36 @@ function renderTasks(){
   }
 
   if(isTodaySelected){
-    list.innerHTML=tasks.map(t=>`
-      <div class="task-item ${t.done?'done':''}">
-        <div class="task-check ${t.done?'checked':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
-        <div class="task-body">
-          <div class="task-time">${t.time}</div>
-          <div class="task-text">${t.text}</div>
-        </div>
-      </div>`).join('');
+    list.innerHTML=tasks.map(t=>taskItemHTML(t,false)).join('');
   }else{
     // Show tasks for other dates too (template behavior)
     list.innerHTML=`<div class="empty-state"><div class="empty-icon">📅</div><p>${selectedDate.getMonth()+1}月${selectedDate.getDate()}日暂无专属任务</p><p style="font-size:11px;color:var(--text-light);margin-top:4px">显示今日任务作为参考：</p></div>`
-      +tasks.map(t=>`
-      <div class="task-item ${t.done?'done':''}" style="opacity:.6">
-        <div class="task-check ${t.done?'checked':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
-        <div class="task-body">
-          <div class="task-time">${t.time}</div>
-          <div class="task-text">${t.text}</div>
-        </div>
-      </div>`).join('');
+      +tasks.map(t=>taskItemHTML(t,true)).join('');
   }
+}
+
+function taskItemHTML(t,dim){
+  return `<div class="task-item ${t.done?'done':''}" ${dim?'style="opacity:.6"':''}>
+    <div class="task-check ${t.done?'checked':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
+    <div class="task-body" onclick="toggleTask(${t.id})">
+      <div class="task-time">${t.time}</div>
+      <div class="task-text">${t.text}</div>
+    </div>
+    <button class="icon-btn" style="margin-left:auto;color:#e74c3c;flex-shrink:0" onclick="deleteTask(${t.id})" title="删除">🗑️</button>
+  </div>`;
 }
 
 function toggleTask(id){
   let tasks=DB.get('tasks',[]);
   tasks=tasks.map(t=>t.id===id?{...t,done:!t.done}:t);
+  DB.set('tasks',tasks);
+  renderTasks();
+}
+
+function deleteTask(id){
+  if(!confirm('确定删除这个计划？'))return;
+  let tasks=DB.get('tasks',[]);
+  tasks=tasks.filter(t=>t.id!==id);
   DB.set('tasks',tasks);
   renderTasks();
 }
