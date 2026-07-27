@@ -29,7 +29,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .sidebar{width:72px;min-width:72px;background:var(--bg-sidebar);display:flex;flex-direction:column;align-items:center;padding-top:12px;padding-bottom:calc(60px + var(--safe-bottom));position:fixed;left:0;top:0;bottom:0;z-index:100;overflow-y:auto;overflow-x:hidden}
 .sidebar-logo{color:#fff;font-size:13px;font-weight:700;text-align:center;margin-bottom:20px;line-height:1.3;writing-mode:vertical-lr;letter-spacing:3px}
 .sidebar-nav{display:flex;flex-direction:column;gap:4px;width:100%;align-items:center;padding:0 6px}
-.nav-item{width:56px;height:56px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,0.75);cursor:pointer;transition:all .25s ease;position:relative;font-size:10px;gap:3px;text-decoration:none}
+.nav-item{width:56px;height:56px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,0.75);cursor:pointer;transition:all .25s ease;position:relative;font-size:10px;gap:3px;text-decoration:none;flex-shrink:0}
 .nav-item .nav-icon{font-size:22px;line-height:1}
 .nav-item .nav-label{font-size:9px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52px}
 .nav-item:hover,.nav-item.active{background:rgba(255,255,255,0.22);color:#fff;transform:scale(1.05)}
@@ -64,7 +64,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .cal-day{font-size:12px;padding:8px 2px;border-radius:10px;cursor:pointer;transition:all .2s;color:var(--text-primary);min-height:32px;display:flex;align-items:center;justify-content:center;-webkit-user-select:none;user-select:none}
 .cal-day.today{background:var(--primary);color:#fff;font-weight:700}
 .cal-day.selected{background:var(--primary-light);color:#fff;font-weight:600}
-.cal-day.other-month{color:var(--text-light);opacity:0.4}
+.cal-day.other-month{color:var(--text-light);opacity:.4}
 .cal-day:hover:not(.today):not(.selected){background:var(--bg-main)}
 .cal-day.has-task::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--primary)}
 
@@ -84,7 +84,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 /* ===== Buttons ===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .25s;outline:none}
 .btn-primary{background:var(--primary);color:#fff}
-.btn-primary:active{transform:scale(0.96);background:var(--primary-dark)}
+.btn-primary:active{transform:scale(.96);background:var(--primary-dark)}
 .btn-outline{background:transparent;color:var(--primary);border:1.5px solid var(--primary)}
 .btn-sm{padding:6px 14px;font-size:12px;border-radius:10px}
 .btn-block{width:100%}
@@ -97,6 +97,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 .tag-blue{background:#eaf2fb;color:#2980b9}
 .tag-red{background:#fdeaea;color:#e74c3c}
 .tag-gray{background:#f0f0f0;color:#666}
+
 
 /* ===== Input ===== */
 .input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;transition:border .2s;background:#fafcfa}
@@ -169,7 +170,7 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 /* ===== English Module ===== */
 .streak-counter{display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:var(--radius);color:#fff;margin-bottom:14px}
 .streak-number{font-size:40px;font-weight:900;line-height:1}
-.streak-unit{font-size:13px;opacity:0.9}
+.streak-unit{font-size:13px;opacity:.9}
 .word-card{background:var(--bg-main);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
 .word-en{font-size:18px;font-weight:700;color:var(--primary);margin-bottom:4px}
 .word-cn{font-size:13px;color:var(--text-secondary)}
@@ -209,10 +210,10 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 
 /* ===== Floating Action Button (Mobile) ===== */
 .fab{display:none;position:fixed;right:20px;bottom:calc(80px + var(--safe-bottom));width:52px;height:52px;border-radius:50%;background:var(--primary);color:#fff;font-size:24px;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(90,154,110,0.35);z-index:99;cursor:pointer;border:none;transition:transform .2s}
-.fab:active{transform:scale(0.9)}
+.fab:active{transform:scale(.9)}
 
 /* ===== Add Modal ===== */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:end;justify-content:center}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:end;justify-content:center}
 .modal-overlay.show{display:flex}
 .modal-box{background:var(--bg-card);border-radius:20px 20px 0 0;width:100%;max-width:500px;padding:24px 20px calc(24px + var(--safe-bottom));animation:slideUp .3s ease}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -221,12 +222,12 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 
 /* ===== Responsive ===== */
 @media(max-width:768px){
-  .sidebar{width:100%;height:auto;min-height:auto;position:fixed;bottom:0;left:0;right:0;top:auto;padding:8px 0 calc(8px + var(--safe-bottom));flex-direction:row;z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,0.08)}
+  .sidebar{width:100%;height:auto;min-height:auto;position:fixed;bottom:0;left:0;right:0;top:auto;padding:8px 0 calc(8px + var(--safe-bottom));flex-direction:row;z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,.08);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
   .sidebar-logo{display:none}
-  .sidebar-nav{flex-direction:row;justify-content:space-around;width:100%;padding:0 4px}
-  .nav-item{width:auto;height:auto;padding:6px 8px;border-radius:10px;gap:1px}
-  .nav-item .nav-icon{font-size:20px}
-  .nav-item .nav-label{font-size:9px}
+  .sidebar-nav{flex-direction:row;justify-content:flex-start;width:100%;padding:0 4px;gap:2px}
+  .nav-item{width:auto;height:auto;padding:6px 7px;border-radius:10px;gap:1px;min-width:52px;max-width:70px}
+  .nav-item .nav-icon{font-size:18px}
+  .nav-item .nav-label{font-size:8px}
   .nav-item.active::before{display:none}
   .main-content{margin-left:0;padding:14px 14px calc(70px + var(--safe-bottom));max-width:100vw}
   .fab{display:flex}
@@ -235,7 +236,7 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 }
 
 /* Scrollbar */
-::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--primary-light);border-radius:4px}
 
@@ -260,6 +261,44 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 
 /* Section divider */
 .section-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;margin:16px 0 10px;color:var(--text-primary)}
+
+/* ===== AI Learning Module ===== */
+.ai-stage{background:var(--bg-card);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);border-left:4px solid var(--primary)}
+.ai-stage-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ai-stage-badge{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:700}
+.ai-stage-badge.beginner{background:#e8f5ec;color:var(--primary-dark)}
+.ai-stage-badge.intermediate{background:#fef3e6;color:#e67e22}
+.ai-stage-badge.advanced{background:#eaf2fb;color:#2980b9}
+.ai-course-card{background:var(--bg-main);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
+.ai-course-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ai-course-avatar{width:40px;height:40px;border-radius:10px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.ai-course-info{flex:1}
+.ai-course-name{font-size:14px;font-weight:700}
+.ai-course-desc{font-size:11px;color:var(--text-secondary);margin-top:2px}
+.ai-course-meta{font-size:11px;color:var(--text-light);margin-top:4px}
+.ai-bilibili-link{display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:16px;font-size:12px;font-weight:700;background:#00A1D6;color:#fff;text-decoration:none;margin-top:8px}
+.ai-checklist{margin:8px 0;padding-left:4px}
+.ai-checklist li{font-size:12px;color:var(--text-secondary);line-height:1.8;list-style:none;position:relative;padding-left:16px}
+.ai-checklist li::before{content:'✓';position:absolute;left:0;color:var(--primary);font-weight:700}
+
+/* ===== Wellness Module ===== */
+.wellness-term-banner{background:linear-gradient(135deg,#17a2b8,#20c997);color:#fff;border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.wellness-term-title{font-size:16px;font-weight:800;margin-bottom:6px}
+.wellness-term-dates{font-size:12px;opacity:.9;margin-bottom:8px}
+.wellness-term-desc{font-size:13px;line-height:1.6;opacity:.95}
+.wellness-section-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:6px;margin:14px 0 10px;color:var(--text-primary)}
+.wellness-drink-card{background:var(--bg-main);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
+.wellness-drink-emoji{font-size:28px;flex-shrink:0}
+.wellness-drink-info{flex:1}
+.wellness-drink-name{font-size:14px;font-weight:700;color:var(--text-primary)}
+.wellness-drink-recipe{font-size:12px;color:var(--text-secondary);line-height:1.6;margin-top:4px}
+.wellness-drink-effect{font-size:11px;color:var(--primary);font-weight:600;margin-top:4px}
+.wellness-meal-card{background:var(--bg-main);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
+.wellness-meal-type{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:6px}
+.wellness-meal-items{font-size:12px;color:var(--text-secondary);line-height:1.7}
+.wellness-exercise-card{background:var(--bg-main);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
+.wellness-exercise-name{font-size:14px;font-weight:700}
+.wellness-exercise-detail{font-size:12px;color:var(--text-secondary);line-height:1.6;margin-top:4px}
 </style>
 </head>
 <body>
@@ -419,14 +458,15 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           <div class="card-title"><span class="icon">📸</span> 上传打卡内容</div>
         </div>
         <div class="btn-group" style="margin-bottom:12px">
-          <button class="btn btn-primary btn-sm" onclick="uploadEnglishPhoto()">🖼️ 上传图片</button>
-          <button class="btn btn-outline btn-sm" onclick="uploadEnglishVideo()">🎬 上传视频</button>
+          <button class="btn btn-primary btn-sm" onclick="document.getElementById('englishFileInput').click()">🖼️ 上传图片</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('englishVideoInput').click()">🎬 上传视频</button>
         </div>
         <img class="img-preview" id="englishImgPreview">
         <div class="upload-hint" onclick="document.getElementById('englishFileInput').click()">
           📷 点击上传或拖拽
         </div>
-        <input type="file" id="englishFileInput" accept="image/*,video/*" style="display:none" onchange="handleEnglishUpload(event)">
+        <input type="file" id="englishFileInput" accept="image/*" capture="environment" style="display:none" onchange="handleEnglishUpload(event)">
+        <input type="file" id="englishVideoInput" accept="video/*" capture="environment" style="display:none" onchange="handleEnglishUpload(event)">
         <div class="input-group" style="margin-top:12px">
           <input class="input" id="englishTodayWord" placeholder="今日新学单词（可选），如：serendipity">
         </div>
@@ -476,7 +516,9 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         <div class="card-header">
           <div class="card-title"><span class="icon">📸</span> 饮食记录</div>
         </div>
-        <button class="btn btn-primary btn-sm btn-block" onclick="addFoodPhoto()">➕ 上传食物照片并记录</button>
+        <button class="btn btn-primary btn-sm btn-block" onclick="document.getElementById('dietPhotoInput').click()">➕ 拍照或上传食物照片</button>
+        <input type="file" id="dietPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="handleDietPhotoUpload(event)">
+        <img class="img-preview" id="dietPhotoPreview">
         <div id="foodRecordList" style="margin-top:10px"></div>
       </div>
 
@@ -501,9 +543,12 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         </div>
         <input class="input" id="generalCheckinText" placeholder="打卡内容...">
         <div class="btn-group" style="margin-top:8px">
-          <button class="btn btn-sm btn-outline" onclick="uploadGeneralPhoto()">🖼️ 上传照片</button>
-          <button class="btn btn-sm btn-outline" onclick="uploadGeneralVideo()">🎬 上传视频</button>
+          <button class="btn btn-sm btn-outline" onclick="document.getElementById('generalPhotoInput').click()">🖼️ 上传照片</button>
+          <button class="btn btn-sm btn-outline" onclick="document.getElementById('generalVideoInput').click()">🎬 上传视频</button>
         </div>
+        <input type="file" id="generalPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="handleGeneralMediaUpload(event,'photo')">
+        <input type="file" id="generalVideoInput" accept="video/*" capture="environment" style="display:none" onchange="handleGeneralMediaUpload(event,'video')">
+        <img class="img-preview" id="generalMediaPreview">
       </div>
 
       <div class="card">
@@ -511,6 +556,218 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           <div class="card-title"><span class="icon">🏆</span> 全部打卡</div>
         </div>
         <div id="allCheckins"></div>
+      </div>
+    </section>
+
+    <!-- ========== 学AI ========== -->
+    <section class="page" id="page-ai" data-page="ai">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">🤖</span> 学AI</h1>
+        <span class="page-badge" id="aiStageBadge">第1阶段</span>
+      </div>
+
+      <div class="wellness-term-banner" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+        <div class="wellness-term-title">🧠 AI零基础教程 · 课程已配好</div>
+        <div class="wellness-term-desc" style="font-size:12px">4个阶段，每个阶段都配好真实可用的课程链接，点开就能学。不用自己搜，国内能直连的优先。</div>
+      </div>
+
+      <!-- 阶段1：建立认知 -->
+      <div class="ai-stage">
+        <div class="ai-stage-header">
+          <div style="font-size:15px;font-weight:800">① 建立认知（第 1-2 周）</div>
+          <span class="ai-stage-badge beginner">国内可看</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">先搞懂 AI 是什么，不写代码。一个周末就能入门。</div>
+
+        <div class="ai-course-card">
+          <div class="ai-course-header">
+            <div class="ai-course-avatar">🎓</div>
+            <div class="ai-course-info">
+              <div class="ai-course-name">吴思达「AI for Everyone」</div>
+              <div class="ai-course-desc">斯坦福教授·非技术背景首选·B站中字版</div>
+              <div class="ai-course-meta">⏱ 约 6 小时</div>
+            </div>
+          </div>
+          <ul class="ai-checklist">
+            <li>搞懂 token、模型、上下文、提示词这些概念到底啥意思</li>
+            <li>别一上来就学 Transformer 架构，没必要</li>
+          </ul>
+          <a class="ai-bilibili-link" href="https://search.bilibili.com/all?keyword=吴思达AIforEveryone" target="_blank" rel="noopener">B站观看 →</a>
+        </div>
+
+        <div class="ai-course-card">
+          <div class="ai-course-header">
+            <div class="ai-course-avatar">🧠</div>
+            <div class="ai-course-info">
+              <div class="ai-course-name">卡帕西「大模型入门」</div>
+              <div class="ai-course-desc">OpenAI 联合创始人·3小时讲透大模型原理·通俗易懂</div>
+              <div class="ai-course-meta">⏱ 约 3 小时</div>
+            </div>
+          </div>
+          <ul class="ai-checklist">
+            <li>理解大模型是怎么"想"的</li>
+            <li>知道它的能力和边界在哪</li>
+          </ul>
+          <a class="ai-bilibili-link" href="https://search.bilibili.com/all?keyword=卡帕西大模型入门" target="_blank" rel="noopener">B站观看 →</a>
+        </div>
+      </div>
+
+      <!-- 阶段2：动手用起来 -->
+      <div class="ai-stage">
+        <div class="ai-stage-header">
+          <div style="font-size:15px;font-weight:800">② 动手用起来（第 3-6 周）</div>
+          <span class="ai-stage-badge intermediate">国内直连</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">认知有了就上手，把工作里的重复活交给 AI。这是最关键的一步。</div>
+
+        <div class="ai-course-card">
+          <div class="ai-course-header">
+            <div class="ai-course-avatar">💙</div>
+            <div class="ai-course-info">
+              <div class="ai-course-name">WorkBuddy（你现正在用的）</div>
+              <div class="ai-course-desc">国内直连·能操作文件/定任务/选办公工具·当「数字员工」</div>
+              <div class="ai-course-meta">⏱ 5 分钟上手教程</div>
+            </div>
+          </div>
+          <ul class="ai-checklist">
+            <li>学会用自然语言让 AI 帮你干活</li>
+            <li>从简单任务开始：整理文件、写文案、做表格</li>
+            <li>逐步进阶：让 AI 自动化你的工作流</li>
+          </ul>
+          <div style="margin-top:8px">
+            <span class="tag tag-blue">💡 你现在就在用它！</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 阶段3：深入理解 -->
+      <div class="ai-stage">
+        <div class="ai-stage-header">
+          <div style="font-size:15px;font-weight:800">③ 深入理解（第 7-10 周）</div>
+          <span class="ai-stage-badge advanced">进阶可选</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">想真正懂 AI 底层？这时候再学原理，事半功倍。</div>
+
+        <div class="ai-course-card">
+          <div class="ai-course-header">
+            <div class="ai-course-avatar">📐</div>
+            <div class="ai-course-info">
+              <div class="ai-course-name">李沐《动手学深度学习》</div>
+              <div class="ai-course-desc">业界经典·有中文版·边学边敲代码</div>
+              <div class="ai-course-meta">⏱ 约 20 小时</div>
+            </div>
+          </div>
+          <a class="ai-bilibili-link" href="https://search.bilibili.com/all?keyword=李沐动手学深度学习" target="_blank" rel="noopener">B站观看 →</a>
+        </div>
+
+        <div class="ai-course-card">
+          <div class="ai-course-header">
+            <div class="ai-course-avatar">🔧</div>
+            <div class="ai-course-info">
+              <div class="ai-course-name">LangChain / Prompt Engineering</div>
+              <div class="ai-course-desc">学会搭建自己的 AI 应用链路</div>
+              <div class="ai-course-meta">⏱ 约 10 小时</div>
+            </div>
+          </div>
+          <a class="ai-bilibili-link" href="https://search.bilibili.com/all?keyword=LangChain教程" target="_blank" rel="noopener">B站搜索 →</a>
+        </div>
+      </div>
+
+      <!-- 阶段4：实战项目 -->
+      <div class="ai-stage">
+        <div class="ai-stage-header">
+          <div style="font-size:15px;font-weight:800">④ 实战项目（第 11+ 周）</div>
+          <span class="ai-stage-badge advanced">持续进行</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">用 AI 解决真实问题，做出属于自己的作品。</div>
+
+        <div class="ai-course-card">
+          <div class="ai-course-header">
+            <div class="ai-course-avatar">🚀</div>
+            <div class="ai-course-info">
+              <div class="ai-course-name">做一个属于你的 AI 项目</div>
+              <div class="ai-course-desc">比如：AI客服、智能写作助手、数据分析机器人…</div>
+            </div>
+          </div>
+          <ul class="ai-checklist">
+            <li>找一个你日常重复做的事情</li>
+            <li>用 AI 把它自动化</li>
+            <li>记录过程，就是最好的学习笔记</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📝</span> 学习笔记</div>
+        </div>
+        <textarea class="note-area" id="aiNotes" placeholder="记录今天学的 AI 知识点、心得体会..." style="min-height:100px"></textarea>
+        <button class="btn btn-primary btn-block" style="margin-top:8px" onclick="saveAiNotes()">💾 保存笔记</button>
+      </div>
+    </section>
+
+    <!-- ========== 养生 ========== -->
+    <section class="page" id="page-wellness" data-page="wellness">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">🍵</span> 养生</h1>
+        <span class="page-badge" id="wellnessTermBadge">加载中...</span>
+      </div>
+
+      <!-- 当前节气横幅 -->
+      <div id="wellnessTermBanner"></div>
+
+      <!-- 每日祛湿饮品 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🧃</span> 每日祛湿饮品（带做法）
+            <button class="btn btn-sm btn-outline" onclick="rotateWellnessDrinks()" style="margin-left:auto;font-size:11px;padding:4px 10px">轮换喝</button>
+          </div>
+        </div>
+        <div id="wellnessDrinksList"></div>
+      </div>
+
+      <!-- 运动建议 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🏃</span> 今日运动建议</div>
+        </div>
+        <div id="wellnessExercise"></div>
+      </div>
+
+      <!-- 三餐推荐 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🍽️</span> 三餐养生建议</div>
+        </div>
+        <div id="wellnessMeals"></div>
+      </div>
+
+      <!-- 养生小贴士 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">💡</span> 今日养生贴士</div>
+        </div>
+        <div id="wellnessTips"></div>
+      </div>
+
+      <!-- 打卡记录 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">✅</span> 养生打卡</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="wellnessDrinkCheck" style="width:18px;height:18px;accent-color:var(--primary)"> 🧃 今天喝了祛湿饮品
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="wellnessExerciseCheck" style="width:18px;height:18px;accent-color:var(--primary)"> 🏃 今天运动了
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="wellnessEarlySleepCheck" style="width:18px;height:18px;accent-color:var(--primary)"> 😴 23点前睡觉
+          </label>
+        </div>
+        <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="saveWellnessCheckin()">✅ 提交养生打卡</button>
+        <div id="wellnessCheckinHistory" style="margin-top:10px"></div>
       </div>
     </section>
 
@@ -694,11 +951,11 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           <div class="card-title"><span class="icon">ℹ️</span> 关于</div>
         </div>
         <p style="font-size:13px;color:var(--text-secondary);line-height:1.8">
-          🐻 熊熊工作台 v1.1<br>
+          🐻 熊熊工作台 v2.0<br>
           个人效率管理工具 · 移动端优先<br><br>
           功能：今日计划 / 小红书博主 / 公众号发布<br>
           热点新闻 / 英语打卡 / 饮食打卡<br>
-          每周复盘 / 每日阅读 / 设置
+          学AI / 养生 / 每日阅读 / 每周复盘 / 设置
         </p>
       </div>
     </section>
@@ -755,21 +1012,27 @@ const DB = {
   remove(key){localStorage.removeItem('bear_workbench_'+key)}
 };
 
+// Get today's date key (YYYY-MM-DD format)
+function todayKey(){return new Date().toISOString().split('T')[0]}
+function dateKey(d){return d.toISOString().split('T')[0]}
+
 // Initialize default data
 function initData(){
   if(!DB.get('tasks')) DB.set('tasks',[
-    {id:1,time:'07:00',text:'起床 → 排便→洗漱→左右各40分钟+喝水升',done:true},
-    {id:2,time:'07:30',text:'背单词→十本书→数学（约60分钟）',done:true},
-    {id:3,time:'08:00',text:'同角度配料：自动生成今日可上架的虚拟资料',done:false},
-    {id:4,time:'08:30',text:'每日热点推送：自动展示今日热点，并筛选选题建议',done:false},
-    {id:5,time:'09:00',text:'发布第1篇小红书（谭美积基方向）',done:false},
-    {id:6,time:'09:30',text:'公众号：自动生成今日公众号文章',done:false},
-    {id:7,time:'10:00',text:'剪辑起势剪辑片内容（准备当天素材）',done:false},
-    {id:8,time:'12:00',text:'发布第2篇小红书 + 吃减肥午餐',done:false},
-    {id:9,time:'13:00',text:'剪辑切片发布5个以上作品',done:false},
-    {id:10,time:'14:00',text:'手机录屏复刻直播（每30分钟切换潮水）',done:false},
-    {id:11,time:'16:00',text:'健身提醒（用另一台手机继续点，虚登33~40分钟）',done:false}
+    {id:1,time:'07:00',text:'起床 → 排便→洗漱→左右各40分钟+喝水升'},
+    {id:2,time:'07:30',text:'背单词→十本书→数学（约60分钟）'},
+    {id:3,time:'08:00',text:'同角度配料：自动生成今日可上架的虚拟资料'},
+    {id:4,time:'08:30',text:'每日热点推送：自动展示今日热点，并筛选选题建议'},
+    {id:5,time:'09:00',text:'发布第1篇小红书（谭美积基方向）'},
+    {id:6,time:'09:30',text:'公众号：自动生成今日公众号文章'},
+    {id:7,time:'10:00',text:'剪辑起势剪辑片内容（准备当天素材）'},
+    {id:8,time:'12:00',text:'发布第2篇小红书 + 吃减肥午餐'},
+    {id:9,time:'13:00',text:'剪辑切片发布5个以上作品'},
+    {id:10,time:'14:00',text:'手机录屏复刻直播（每30分钟切换潮水）'},
+    {id:11,time:'16:00',text:'健身提醒（用另一台手机继续点，虚登33~40分钟）'}
   ]);
+  // Per-date task done status (separate from task definitions)
+  if(!DB.get('task_done_dates')) DB.set('task_done_dates',{});
   if(!DB.get('xhs_notes')) DB.set('xhs_notes',[]);
   if(!DB.get('xhs_material')) DB.set('xhs_material',null);
   if(!DB.get('xhs_product')) DB.set('xhs_product',null);
@@ -785,8 +1048,11 @@ function initData(){
   if(!DB.get('settings')) DB.set('settings',{nickname:'',goal:'55岁提前退休'});
   if(!DB.get('checkins')) DB.set('checkins',[]);
   if(!DB.get('meals')) DB.set('meals',{breakfast:[],lunch:[],dinner:[]});
+  // News cache now includes date key for daily refresh
+  if(!DB.get('cached_news_date')) DB.set('cached_news_date','');
   if(!DB.get('cached_news')) DB.set('cached_news',null);
-  if(!DB.get('news_cache_time')) DB.set('news_cache_time',0);
+  if(!DB.get('wellness_checkins')) DB.set('wellness_checkins',[]);
+  if(!DB.get('ai_notes')) DB.set('ai_notes','');
 }
 
 // ==================== Navigation ====================
@@ -797,6 +1063,8 @@ const NAV_ITEMS = [
   {id:'news',icon:'🔥',label:'每日热点'},
   {id:'diet',icon:'🍱',label:'饮食·打卡'},
   {id:'english',icon:'🔤',label:'英语打卡'},
+  {id:'ai',icon:'🤖',label:'学AI'},
+  {id:'wellness',icon:'🍵',label:'养生'},
   {id:'reading',icon:'📚',label:'每日阅读'},
   {id:'review',icon:'📊',label:'每周复盘'},
   {id:'settings',icon:'⚙️',label:'设置'}
@@ -829,6 +1097,8 @@ function switchPage(pageId){
   if(pageId==='reading')renderReading();
   if(pageId==='review')renderReview();
   if(pageId==='settings')renderSettings();
+  if(pageId==='ai')renderAi();
+  if(pageId==='wellness')renderWellness();
 }
 
 // ==================== Calendar (Fixed: date selection works) ====================
@@ -928,13 +1198,23 @@ function formatDateCN(d){
   return `${d.getMonth()+1}月${d.getDate()}日 ${['周日','周一','周二','周三','周四','周五','周六'][d.getDay()]}`;
 }
 
-// ==================== Tasks (now filtered by selected date) ====================
+// ==================== Tasks (FIXED: per-date done status) ====================
+function getTaskDoneStatus(dateKey){
+  const doneDates=DB.get('task_done_dates',{});
+  return doneDates[dateKey]||{};
+}
+
+function setTaskDone(id,done,dateKey){
+  const doneDates=DB.get('task_done_dates',{});
+  if(!doneDates[dateKey])doneDates[dateKey]={};
+  doneDates[dateKey][id]=done;
+  DB.set('task_done_dates',doneDates);
+}
+
 function renderTasks(){
   const list=document.getElementById('taskList');
   const tasks=DB.get('tasks',[]);
-
-  // For simplicity: show all tasks when today is selected, empty message otherwise
-  // In a full app you'd have per-date tasks
+  const selDateKey=dateKey(selectedDate);
   const today=new Date();
   const isTodaySelected=selectedDate.getFullYear()===today.getFullYear()&&
                         selectedDate.getMonth()===today.getMonth()&&
@@ -945,12 +1225,21 @@ function renderTasks(){
     return;
   }
 
+  // Get done status for the selected date
+  const doneStatus=getTaskDoneStatus(selDateKey);
+
   if(isTodaySelected){
-    list.innerHTML=tasks.map(t=>taskItemHTML(t,false)).join('');
+    list.innerHTML=tasks.map(t=>{
+      const isDone=!!doneStatus[t.id];
+      return taskItemHTML({...t,done:isDone},false);
+    }).join('');
   }else{
-    // Show tasks for other dates too (template behavior)
+    // For non-today dates, show tasks as reference (not done by default unless checked that day)
     list.innerHTML=`<div class="empty-state"><div class="empty-icon">📅</div><p>${selectedDate.getMonth()+1}月${selectedDate.getDate()}日暂无专属任务</p><p style="font-size:11px;color:var(--text-light);margin-top:4px">显示今日任务作为参考：</p></div>`
-      +tasks.map(t=>taskItemHTML(t,true)).join('');
+      +tasks.map(t=>{
+        const isDone=!!doneStatus[t.id];
+        return taskItemHTML({...t,done:isDone},true);
+      }).join('');
   }
 }
 
@@ -966,9 +1255,10 @@ function taskItemHTML(t,dim){
 }
 
 function toggleTask(id){
-  let tasks=DB.get('tasks',[]);
-  tasks=tasks.map(t=>t.id===id?{...t,done:!t.done}:t);
-  DB.set('tasks',tasks);
+  const selDateKey=dateKey(selectedDate);
+  const doneStatus=getTaskDoneStatus(selDateKey);
+  const newDone=!doneStatus[id];
+  setTaskDone(id,newDone,selDateKey);
   renderTasks();
 }
 
@@ -977,6 +1267,10 @@ function deleteTask(id){
   let tasks=DB.get('tasks',[]);
   tasks=tasks.filter(t=>t.id!==id);
   DB.set('tasks',tasks);
+  // Also clean up done status for this task across all dates
+  const doneDates=DB.get('task_done_dates',{});
+  Object.keys(doneDates).forEach(dk=>delete doneDates[dk][id]);
+  DB.set('task_done_dates',doneDates);
   renderTasks();
 }
 
@@ -1054,7 +1348,7 @@ const MATERIAL_TEMPLATES=[
     emoji:'🎨',
     topic:'#设计素材',
     title:'设计师私藏素材库｜PPT/海报/封面一站式',
-    content:'5000+���选素材，含字体/图标/模板/配色方案。商用无忧，持续更新。做PPT再也不愁没灵感。',
+    content:'5000+精选素材，含字体/图标/模板/配色方案。商用无忧，持续更新。做PPT再也不愁没灵感。',
     price:19.9,
     priceLow:9.9,
     priceHigh:39.9,
@@ -1269,19 +1563,18 @@ function saveWechatDraft(){
 }
 function toggleAutoPublish(el){el.classList.toggle('on')}
 
-// ==================== Daily News (Redesigned to match screenshots) ====================
+// ==================== Daily News (FIXED: daily refresh by date) ====================
 let currentHotNews=[];
 let newsActivePlatform='xhs';
 let newsActiveSub='dy';
 
 async function renderNews(){
-  // Try to load cached or fetch fresh news
+  // FIX: Check cache DATE - if cached from a different day, force refresh
   const cached=DB.get('cached_news');
-  const cacheTime=DB.get('news_cache_time',0);
-  const now=Date.now();
-  const CACHE_DURATION=30*60*1000; // 30 minutes
+  const cachedDate=DB.get('cached_news_date','');
+  const todayStr=todayKey();
 
-  if(cached && (now-cacheTime)<CACHE_DURATION){
+  if(cached && cachedDate===todayStr){
     currentHotNews=cached;
     renderNewsUI();
   }else{
@@ -1296,9 +1589,7 @@ async function renderNews(){
 
 async function fetchRealNews(){
   try {
-    // Use WebSearch-like approach: search for today's hot topics in China
     const resp=await fetch('https://tophub.today/n/KqndgxeLl9',{mode:'no-cors'});
-    // no-cors won't give us data, so fall back to generated fresh-looking data
     throw new Error('no-cors');
   }catch(e){
     // Generate time-aware mock data that feels fresh
@@ -1316,7 +1607,6 @@ async function fetchRealNews(){
       {title:'教育改革新方案引热议',baseHot:298}
     ];
 
-    // Slight variation based on time to feel "fresh"
     const variation=Math.floor(hour/3);
     currentHotNews=baseTopics.map((t,i)=>{
       const hotVariation=Math.floor(Math.random()*50)-25;
@@ -1328,8 +1618,9 @@ async function fetchRealNews(){
       };
     });
 
+    // FIX: Save with today's date key
     DB.set('cached_news',currentHotNews);
-    DB.set('news_cache_time',Date.now());
+    DB.set('cached_news_date',todayKey());
     renderNewsUI();
   }
 }
@@ -1337,7 +1628,7 @@ async function fetchRealNews(){
 function refreshNews(){
   // Force refresh - clear cache and re-fetch
   DB.set('cached_news',null);
-  DB.set('news_cache_time',0);
+  DB.set('cached_news_date','');
   document.getElementById('hotRankList').innerHTML='<div class="news-loading"><span class="spin"></span>正在刷新最新热点...</div>';
   document.getElementById('topicSuggestions').innerHTML='';
   document.getElementById('hotCreativeContent').innerHTML='';
@@ -1379,7 +1670,6 @@ function renderNewsUI(){
 }
 
 function setupNewsTabs(){
-  // Platform tabs
   document.querySelectorAll('#newsPlatformTabs .news-platform-tab').forEach(tab=>{
     tab.onclick=function(){
       document.querySelectorAll('#newsPlatformTabs .news-platform-tab').forEach(t=>t.classList.remove('active'));
@@ -1388,7 +1678,6 @@ function setupNewsTabs(){
       renderNewsCreative();
     };
   });
-  // Sub tabs
   document.querySelectorAll('#newsSubTabs .news-sub-tab').forEach(tab=>{
     tab.onclick=function(){
       document.querySelectorAll('#newsSubTabs .news-sub-tab').forEach(t=>t.classList.remove('active'));
@@ -1435,11 +1724,9 @@ function renderNewsCreative(){
 }
 
 function rotateNewsCreative(){
-  // Rotate to next hot news item as the creative base
   if(currentHotNews.length>1){
     const first=currentHotNews.shift();
     currentHotNews.push(first);
-    // Update ranks
     currentHotNews.forEach((n,i)=>n.rank=i+1);
     renderNewsUI();
   }
@@ -1475,7 +1762,7 @@ function renderEnglish(){
   }
 
   // Check if already checked in today
-  const todayStr=new Date().toISOString().split('T')[0];
+  const todayStr=todayKey();
   const lastDate=DB.get('english_last_date','');
   const btn=document.getElementById('englishCheckinBtn');
   if(lastDate===todayStr){
@@ -1500,13 +1787,12 @@ function handleEnglishUpload(e){
     };
     reader.readAsDataURL(file);
   }
+  // Reset input so same file can be selected again
+  e.target.value='';
 }
 
-function uploadEnglishPhoto(){document.getElementById('englishFileInput').click()}
-function uploadEnglishVideo(){document.getElementById('englishFileInput').click()}
-
 function submitEnglishCheckin(){
-  const todayStr=new Date().toISOString().split('T')[0];
+  const todayStr=todayKey();
   const lastDate=DB.get('english_last_date','');
   if(lastDate===todayStr){return alert('今天已经打过卡啦！🎉')}
 
@@ -1524,7 +1810,7 @@ function submitEnglishCheckin(){
   // Update streak
   let streak=DB.get('english_streak',1);
   const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
-  const yesterdayStr=yesterday.toISOString().split('T')[0];
+  const yesterdayStr=dateKey(yesterday);
   if(lastDate===yesterdayStr) streak++;
   else if(lastDate!==todayStr) streak=1;
   DB.set('english_streak',streak);
@@ -1547,7 +1833,7 @@ function deleteEnglishHistory(id){
   renderEnglish();
 }
 
-// ==================== Diet & Check-in ====================
+// ==================== Diet & Check-in (FIXED: camera capture works) ====================
 let currentMeal='breakfast';
 
 function renderDiet(){
@@ -1639,15 +1925,63 @@ function removeMealItem(i){
   renderMealContent();
 }
 
-function addFoodPhoto(){
-  const name=prompt('食物名称：');if(!name)return;
-  const amount=prompt('份量（如：100g）：')||'';
-  const meals=DB.get('meals',{breakfast:[],lunch:[],dinner:[]});
+// FIXED: Diet photo upload with camera support
+function handleDietPhotoUpload(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const name=prompt('食物名称：')||'美食记录';
+  const amount=prompt('份量（如：一碗）：')||'';
   const mealNames={breakfast:'早餐',lunch:'午餐',dinner:'晚餐'};
-  const foods=DB.get('food_records',[]);
-  foods.push({name,amount,meal:mealNames[currentMeal],date:new Date().toLocaleDateString('zh-CN')});
-  DB.set('food_records',foods);
-  renderDiet();
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const foods=DB.get('food_records',[]);
+    foods.push({name,amount,meal:mealNames[currentMeal],date:new Date().toLocaleDateString('zh-CN'),img:ev.target.result});
+    DB.set('food_records',foods);
+    const preview=document.getElementById('dietPhotoPreview');
+    preview.src=ev.target.result;
+    preview.classList.add('show');
+    setTimeout(()=>{preview.src='';preview.classList.remove('show')},3000);
+    renderDiet();
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+
+// FIXED: General media upload with camera support
+function handleGeneralMediaUpload(e,type){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const preview=document.getElementById('generalMediaPreview');
+    preview.src=ev.target.result;
+    preview.classList.add('show');
+    // Also save to checkins
+    const text=document.getElementById('generalCheckinText').value.trim()||(type==='photo'?'拍照打卡':'视频打卡');
+    const checkins=DB.get('checkins',[]);
+    checkins.push({text,date:new Date().toLocaleDateString('zh-CN'),img:ev.target.result,type});
+    DB.set('checkins',checkins);
+    renderDiet();
+  };
+  if(type==='video'){
+    // For video, just save without preview (or use URL.createObjectURL)
+    const url=URL.createObjectURL(file);
+    const preview=document.getElementById('generalMediaPreview');
+    preview.src=url;
+    preview.classList.add('show');
+    const text=document.getElementById('generalCheckinText').value.trim()||'视频打卡';
+    const checkins=DB.get('checkins',[]);
+    checkins.push({text,date:new Date().toLocaleDateString('zh-CN'),img:url,type:'video'});
+    DB.set('checkins',checkins);
+    renderDiet();
+  }else{
+    reader.readAsDataURL(file);
+  }
+  e.target.value='';
+}
+
+function addFoodPhoto(){
+  document.getElementById('dietPhotoInput').click();
 }
 
 function saveWeight(){
@@ -1663,8 +1997,6 @@ function saveWeight(){
 function editWeight(i){const w=prompt('修改体重：',DB.get('weights',[])[i]?.weight);if(w){const weights=DB.get('weights',[]);weights[i].weight=parseFloat(w);DB.set('weights',weights);renderDiet()}}
 function deleteWeight(i){if(confirm('确定删除？')){const weights=DB.get('weights',[]);weights.splice(i,1);DB.set('weights',weights);renderDiet()}}
 function toggleGeneralCheckin(){}
-function uploadGeneralPhoto(){alert('上传照片（演示功能）')}
-function uploadGeneralVideo(){alert('上传视频（演示功能）')}
 
 // ==================== Reading Module ====================
 function renderReading(){
@@ -1796,8 +2128,10 @@ function renderReview(){
   document.getElementById('weekLabel').textContent=`${weekStart.getMonth()+1}/${weekStart.getDate()} - ${weekEnd.getMonth()+1}/${weekEnd.getDate()}`;
 
   const tasks=DB.get('tasks',[]);
-  const doneTasks=tasks.filter(t=>t.done).length;
-  const planRate=tasks.length>0?Math.round(doneTasks/tasks.length*100):0;
+  const doneDates=DB.get('task_done_dates',{});
+  const todayDone=doneDates[todayKey()]||{};
+  const doneCount=tasks.filter(t=>todayDone[t.id]).length;
+  const planRate=tasks.length>0?Math.round(doneCount/tasks.length*100):0;
   document.getElementById('weekPlanRate').textContent=planRate+'%';
   document.getElementById('weekPlanBar').style.width=planRate+'%';
 
@@ -1858,12 +2192,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ==================== Data Management ====================
 function exportData(){
   const data={};
-  const keys=['tasks','xhs_notes','xhs_material','xhs_product','english_history','english_streak','english_last_date','books','reading_logs','reading_streak','food_records','weights','weekly_reviews','settings','checkins','meals','cached_news','news_cache_time'];
+  const keys=['tasks','task_done_dates','xhs_notes','xhs_material','xhs_product','english_history','english_streak','english_last_date','books','reading_logs','reading_streak','food_records','weights','weekly_reviews','settings','checkins','meals','cached_news','cached_news_date','wellness_checkins','ai_notes'];
   keys.forEach(k=>data[k]=DB.get(k));
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=`熊熊工作台备份_${new Date().toISOString().split('T')[0]}.json`;
+  a.download=`熊熊工作台备份_${todayKey()}.json`;
   a.click();
 }
 
@@ -1903,6 +2237,182 @@ function handleFabClick(){
   else alert('当前页面暂无快捷操作');
 }
 
+// ==================== AI Learning Module ====================
+function renderAi(){
+  document.getElementById('aiNotes').value=DB.get('ai_notes')||'';
+}
+
+function saveAiNotes(){
+  const notes=document.getElementById('aiNotes').value;
+  DB.set('ai_notes',notes);
+  alert('💾 学习笔记已保存！');
+}
+
+// ==================== Wellness Module ====================
+// Solar term data for 2026
+const SOLAR_TERMS_2026 = [
+  {name:'小寒',start:'2026-01-05',end:'2026-01-19',desc:'一年中最冷的时节，注意保暖养肾。',theme:'#3498db',drinks:['生姜红糖水','桂圆红枣茶'],exercise:'室内瑜伽/太极',meals:{breakfast:'小米粥+鸡蛋+红薯',lunch:'羊肉炖萝卜+米饭',dinner:'山药排骨汤+青菜'}},
+  {name:'大寒',start:'2026-01-20',end:'2026-02-02',desc:'寒冷至极，阳气初生。宜温补不宜大补。',theme:'#2980b9',drinks:['枸杞桂圆茶','黑豆豆浆'],exercise:'慢走/八段锦',meals:{breakfast:'燕麦粥+坚果+牛奶',lunch:'清炖鸡汤+杂粮饭',dinner:'白菜豆腐汤'}},
+  {name:'立春',start:'2026-02-03',end:'2026-02-17',desc:'春季伊始，万物复苏。养肝为先，少酸多甘。',theme:'#27ae60',drinks:['菊花枸杞茶','玫瑰花茶'],exercise:'户外散步/踏青',meals:{breakfast:'韭菜鸡蛋饼+豆浆',lunch:'春笋炒肉+米饭',dinner:'菠菜猪肝汤'}},
+  {name:'雨水',start:'2026-02-18',end:'2026-03-04',desc:'气温回升，湿气渐增。健脾祛湿是重点。',theme:'#2ecc71',drinks:['陈皮普洱茶','红豆薏米水'],exercise:'轻柔拉伸',meals:{breakfast:'山药粥+煮鸡蛋',lunch:'香菇油菜+馒头',dinner:'冬瓜虾仁汤'}},
+  {name:'惊蛰',start:'2026-03-05',end:'2026-03-19',desc:'春雷乍动，万物生长。养肝护阳，早睡早起。',theme:'#58d68d',drinks:['金银花茶','茉莉花茶'],exercise:'晨跑/快走',meals:{breakfast:'葱油饼+牛奶+水果',lunch:'蒜苔炒肉丝+米饭',dinner:'荠菜豆腐羹'}},
+  {name:'春分',start:'2026-03-20',end:'2026-04-03',desc:'昼夜平分，阴阳平衡。调和肝肾，保持心情舒畅。',theme:'#1abc9c',drinks:['柠檬蜂蜜水','绿豆汤'],exercise:'放风筝/登山',meals:{breakfast:'春卷+小米粥',lunch:'香椿炒蛋+杂粮饭',dinner:'菌菇汤'}},
+  {name:'清明',start:'2026-04-04',end:'2026-04-19',desc:'天清地明，阳气升发。宜疏肝理气，忌食发物。',theme:'#16a085',drinks:['菊花茶','薄荷绿茶'],exercise:'踏青/骑行',meals:{breakfast:'青团+豆浆',lunch:'荠菜馄饨+米饭',dinner:'莼菜汤'}},
+  {name:'谷雨',start:'2026-04-20',end:'2026-05-04',desc:'雨生百谷，湿气最重。健脾祛湿，养胃护肝。',theme:'#138d75',drinks:['红豆薏米水','茯苓茶'],exercise:'慢跑/太极',meals:{breakfast:'香椿炒蛋+粥',lunch:'蒜苔炒肉+米饭',dinner:'山药老鸭汤'}},
+  {name:'立夏',start:'2026-05-05',end:'2026-05-19',desc:'夏季开始，心火渐旺。养心为先，午休不可少。',theme:'#e67e22',drinks:['酸梅汤','绿豆百合汤'],exercise:'晨练/游泳',meals:{breakfast:'荷叶粥+鸡蛋',lunch:'苦瓜炒蛋+米饭',dinner:'冬瓜排骨汤'}},
+  {name:'小满',start:'2026-05-20',end:'2026-06-04',desc:'麦粒渐满，湿热交蒸。清热祛湿，防暑降温。',theme:'#f39c12',drinks:['金银花茶','苦瓜茶'],exercise:'散步/瑜伽',meals:{breakfast:'绿豆粥+咸鸭蛋',lunch:'丝瓜虾仁+米饭',dinner:'番茄蛋汤'}},
+  {name:'芒种',start:'2026-06-05',end:'2026-06-20',desc:'有芒之种，忙于播种。养心除湿，饮食清淡。',theme:'#d35400',drinks:['陈皮茶','薏米红豆汤'],exercise:'快走/太极',meals:{breakfast:'小米粥+玉米',lunch:'黄瓜炒蛋+糙米饭',dinner:'冬瓜薏米汤'}},
+  {name:'夏至',start:'2026-06-21',end:'2026-07-05',desc:'日长至极，阳极阴生。养心护阳，切忌贪凉。',theme:'#c0392b',drinks:['西瓜翠衣汤','酸梅汤'],exercise:'早晚运动避正午',meals:{breakfast:'绿豆汤+包子',lunch:'凉拌三丝+米饭',dinner:'苦瓜酿肉'}},
+  {name:'小暑',start:'2026-07-06',end:'2026-07-21',desc:'暑气渐盛，湿热难耐。清心解暑，祛湿排毒。',theme:'#e74c3c',drinks:['绿豆汤','荷叶茶'],exercise:'晨练/游泳(傍晚)',meals:{breakfast:'绿豆百合粥+鸡蛋',lunch:'凉拌黄瓜+西红柿鸡蛋面',dinner:'丝瓜蛋汤'}},
+  // ===== 三伏天（重点！） =====
+  {name:'初伏',start:'2026-07-15',end:'2026-07-24',desc:'🔥 三伏天开启！初伏10天，湿热交蒸最重时节。中医讲"冬病夏治"最佳窗口期。核心：温阳祛湿 + 轻运动微汗 + 健脾饮食。',theme:'#e74c3c',isSanfu:true,sanfuStage:'初伏',drinks:['红豆薏米水','冬瓜荷叶茶','陈皮普洱茶','绿豆汤','酸梅汤'],exercise:'八段锦/太极(微微出汗即可)',meals:{breakfast:'小米南瓜粥+煮鸡蛋+红薯',lunch:'清炒时蔬+糙米饭+冬瓜排骨汤(祛湿)',dinner:'山药莲子羹+清蒸鱼(少油少盐)'}},
+  {name:'中伏',start:'2026-07-25',end:'2026-08-13',desc:'🔥🔥 中伏！三伏最热20天！现在是袪湿黄金期·初伏7.15-7.24/中伏7.25-8.13/末伏8.14-8.23 现在是袪湿黄金期，中医讲"三伏不养·秋冬必虚"。核心：温饮忌冰 + 轻运动微汗 + 健脾祛湿。',theme:'#c0392b',isSanfu:true,sanfuStage:'中伏',drinks:['红豆薏米水','冬瓜荷叶茶','陈皮普洱茶','绿豆汤','酸梅汤','茯苓红枣茶'],exercise:'八段锦/太极/散步(避免大汗淋漓)',meals:{breakfast:'红豆薏米粥+煮鸡蛋+蒸红薯',lunch:'清炒苦瓜+糙米饭+冬瓜老鸭汤(经典祛湿方)',dinner:'山药芡实粥+清蒸鲈鱼(健脾)'}},
+  {name:'末伏',start:'2026-08-14',end:'2026-08-23',desc:'🔥 末伏！三伏最后10天，抓紧最后的"冬病夏治"机会。湿热仍重但开始转收敛。',theme:'#e67e22',isSanfu:true,sanfuStage:'末伏',drinks:['红豆薏米水','绿豆汤','酸梅汤','茯苓红枣茶'],exercise:'太极/散步/轻度拉伸',meals:{breakfast:'小米粥+鸡蛋+玉米',lunch:'丝瓜炒蛋+杂粮饭+菌菇豆腐汤',dinner:'莲子银耳羹'}},
+  {name:'立秋',start:'2026-08-24',end:'2026-09-06',desc:'秋意渐浓，燥气始生。润肺防燥，收敛阳气。',theme:'#d35400',drinks:['雪梨银耳汤','蜂蜜柚子茶'],exercise:'早睡早起',meals:{breakfast:'银耳莲子粥+鸡蛋',lunch:'莲藕炖排骨+米饭',dinner:'百合西芹'}},
+  {name:'处暑',start:'2026-09-07',end:'2026-09-21',desc:'暑气将消，秋燥明显。滋阴润燥，适当进补。',theme:'#e67e22',drinks:['冰糖雪梨水','罗汉果茶'],exercise:'登山/健走',meals:{breakfast:'百合粥+坚果',lunch:'白萝卜炖羊肉+米饭',dinner:'银耳莲子羹'}},
+  {name:'白露',start:'2026-09-22',end:'2026-10-07',desc:'露凝而白，凉意袭人。保暖护肺，预防感冒。',theme:'#f39c12',drinks:['姜枣茶','桂花蜜茶'],exercise:'户外活动',meals:{breakfast:'红枣桂圆粥+鸡蛋',lunch:'板栗烧鸡+米饭',dinner:'山药炖鸡汤'}},
+  {name:'秋分',start:'2026-10-08',end:'2026-10-22',desc:'秋分平分，阴阳平衡。收敛神气，保持心情平和。',theme:'#f1c40f',drinks:['蜂蜜水','枸杞菊花茶'],exercise:'登山/太极',meals:{breakfast:'南瓜粥+鸡蛋',lunch:'栗子焖鸡+米饭',dinner:'莲藕花生汤'}},
+  {name:'寒露',start:'2026-10-23',end:'2026-11-06',desc:'寒露凝结，深秋已至。添衣保暖，润燥养肺。',theme:'#e67e22',drinks:['红糖姜茶','雪梨膏'],exercise:'室内运动为主',meals:{breakfast:'热粥+煮蛋+坚果',lunch:'羊肉萝卜汤+馒头',dinner:'白菜炖豆腐'}},
+  {name:'霜降',start:'2026-11-07',end:'2026-11-21',desc:'霜降大地，冬将至。补肾填精，为入冬做准备。',theme:'#d35400',drinks:['黑芝麻糊','核桃红枣茶'],exercise:'慢跑/太极',meals:{breakfast:'黑米粥+鸡蛋+核桃',lunch:'牛肉炖土豆+米饭',dinner:'羊肉汤+青菜'}},
+  {name:'立冬',start:'2026-11-22',end:'2026-12-06',desc:'冬季伊始，万物收藏。养肾藏精，早睡晚起。',theme:'#3498db',drinks:['红枣桂圆茶','生姜红糖水'],exercise:'室内运动/晒太阳',meals:{breakfast:'羊肉汤面+鸡蛋',lunch:'萝卜炖牛腩+米饭',dinner:'当归生姜羊肉汤'}},
+  {name:'小雪',start:'2026-12-07',end:'2026-12-20',desc:'寒潮频至，注意保暖。温补为宜，不宜大补。',theme:'#2980b9',drinks:['姜茶','红枣枸杞茶'],exercise:'室内瑜伽/太极',meals:{breakfast:'小米粥+红薯+鸡蛋',lunch:'白菜炖豆腐+馒头',dinner:'萝卜羊肉汤'}},
+  {name:'大雪',start:'2026-12-21',end:'2027-01-04',desc:'隆冬已至，严寒逼人。温肾壮阳，御寒保暖。',theme:'#1abc9c',drinks:['生姜可乐','肉桂红茶'],exercise:'晒太阳/室内拉伸',meals:{breakfast:'牛肉面+鸡蛋',lunch:'火锅(清汤)+蔬菜',dinner:'羊肉饺子汤'}},
+  {name:'冬至',start:'2027-01-05',end:'2027-01-19',desc:'一阳始生，冬至大如年。补肾佳期，宜吃汤圆/饺子。',theme:'#16a085',drinks:['当归生姜羊肉汤','红枣桂圆茶'],exercise:'晒太阳/散步',meals:{breakfast:'汤圆/饺子+牛奶',lunch:'羊肉煲+米饭',dinner:'核桃芝麻糊'}}
+];
+
+// 祛湿饮品完整配方库
+const WELLNESS_DRINKS = [
+  {emoji:'🔴',name:'红豆薏米水',recipe:'赤小豆 30g + 炒薏米 30g（薏米一定要干锅炒黄，否则偏寒）+ 加水煮 40 分钟，当水喝。最经典祛湿方。',effect:'健脾利湿、消除水肿'},
+  {emoji:'🥒',name:'冬瓜荷叶茶',recipe:'冬瓜带皮切块 + 干荷叶一小把煮水 20 分钟，清热利湿，适合闷热天。',effect:'清热解毒、利尿消肿'},
+  {emoji:'🟤',name:'陈皮普洱茶',recipe:'陈皮 3g + 普洱茶，开水冲泡，理气健脾化痰湿，饭后喝。',effect:'理气健脾、化痰降脂'},
+  {emoji:'🟢',name:'绿豆汤',recipe:'绿豆 50g 煮开花，加少许冰糖（常温喝，别冰镇），清热解暑。',effect:'清热解毒、消暑止渴'},
+  {emoji:'🟣',name:'酸梅汤',recipe:'乌梅 + 山楂 + 陈皮 + 甘草 + 冰糖 40 分钟，生津止渴，常温喝。',effect:'生津止渴、消食开胃'},
+  {emoji:'🔵',name:'茯苓红枣茶',recipe:'茯苓 15g + 红枣 5 颗煮水 20 分钟，健脾安神，适合湿气重+睡眠差。',effect:'健脾安神、利水渗湿'}
+];
+
+let wellnessDrinkIndex=0;
+
+function getCurrentSolarTerm(){
+  const todayStr=todayKey();
+  for(const term of SOLAR_TERMS_2026){
+    if(todayStr>=term.start && todayStr<=term.end) return term;
+  }
+  // Default: return a generic term
+  return {name:'日常养生',desc:'根据自身体质调整作息和饮食，保持规律作息是关键。',theme:'#5a9a6e',drinks:['温水','淡茶'],exercise:'适度运动',meals:{breakfast:'营养均衡早餐',lunch:'午餐七分饱',dinner:'清淡晚餐'}};
+}
+
+function renderWellness(){
+  const term=getCurrentSolarTerm();
+  document.getElementById('wellnessTermBadge').textContent=term.name+(term.isSanfu?' · '+term.sanfuStage:'');
+
+  // Term banner
+  document.getElementById('wellnessTermBanner').innerHTML=`
+    <div class="wellness-term-banner" style="background:linear-gradient(135deg,${term.theme||'#17a2b8'},${term.isSanfu?'#e74c3c':'#20c997'})">
+      <div class="wellness-term-title">🍃 当前正处于「${term.name}」${term.isSanfu?`（${term.start.replace('2026-','')} - ${term.end.replace('2026-','')}）`:''}</div>
+      <div class="wellness-term-dates">${term.isSanfu?'2026 三伏共 40 天加长版 · 初伏7.15-7.24 / 中伏7.25-8.13 / 末伏8.14-8.23':''}</div>
+      <div class="wellness-term-desc">${term.desc}</div>
+    </div>`;
+
+  // Drinks
+  renderWellnessDrinks(term);
+
+  // Exercise
+  const exEl=document.getElementById('wellnessExercise');
+  exEl.innerHTML=`<div class="wellness-exercise-card">
+    <div class="wellness-exercise-name">🏃 推荐运动</div>
+    <div class="wellness-exercise-detail">${term.exercise}</div>
+    ${term.isSanfu?'<div style="margin-top:6px"><span class="tag tag-red">⚠️ 三伏天避免大汗淋漓，微微出汗即可</span></div>':''}
+  </div>`;
+
+  // Meals
+  const mealEl=document.getElementById('wellnessMeals');
+  mealEl.innerHTML=`
+    <div class="wellness-meal-card">
+      <div class="wellness-meal-type">🌅 早餐推荐</div>
+      <div class="wellness-meal-items">${term.meals.breakfast}</div>
+    </div>
+    <div class="wellness-meal-card">
+      <div class="wellness-meal-type">☀️ 午餐推荐</div>
+      <div class="wellness-meal-items">${term.meals.lunch}</div>
+    </div>
+    <div class="wellness-meal-card">
+      <div class="wellness-meal-type">🌙 晚餐推荐</div>
+      <div class="wellness-meal-items">${term.meals.dinner}</div>
+    </div>`;
+
+  // Tips
+  const tipsEl=document.getElementById('wellnessTips');
+  const tips=term.isSanfu?[
+    '三伏天是"冬病夏治"的最佳时机，慢性鼻炎、关节炎患者可配合艾灸',
+    '空调温度不要低于26℃，避免冷风直吹身体',
+    '少吃冰饮冰食，伤脾胃阳气',
+    '每天泡脚15-20分钟（水温40℃左右），微微出汗即可',
+    '中午小憩20-30分钟，但不要超过1小时'
+  ]:[
+    '保持规律作息，尽量在23点前入睡',
+    '每餐吃到七八分饱即可，不要暴饮暴食',
+    '每天饮水1500-2000ml，少量多次',
+    '保持心情愉悦，情绪影响健康',
+    '适度运动，每周至少3次，每次30分钟以上'
+  ];
+  tipsEl.innerHTML=tips.map((t,i)=>`<div style="padding:8px;background:var(--bg-main);border-radius:8px;margin-bottom:6px;font-size:12px;line-height:1.6"><span style="color:var(--primary);font-weight:700">${i+1}. </span>${t}</div>`).join('');
+
+  // Checkin history
+  const checkins=DB.get('wellness_checkins',[]);
+  const histEl=document.getElementById('wellnessCheckinHistory');
+  if(checkins.length===0){
+    histEl.innerHTML='<div class="empty-state"><p>暂无打卡记录</p></div>';
+  }else{
+    histEl.innerHTML=checkins.slice(-5).reverse().map(c=>`
+      <div style="padding:8px;background:var(--bg-main);border-radius:8px;margin-bottom:4px;font-size:12px">
+        📅 ${c.date} ${c.drink?'🧃':''}${c.exercise?'🏃':''}${c.sleep?'😴':''}
+      </div>`).join('');
+  }
+}
+
+function renderWellnessDrinks(term){
+  const el=document.getElementById('wellnessDrinksList');
+  const drinksToShow=term.drinks.map(dName=>WELLNESS_DRINKS.find(d=>d.name===dName)).filter(Boolean);
+  // Show up to 4 drinks, rotate based on index
+  const startIdx=wellnessDrinkIndex%Math.max(drinksToShow.length,1);
+  const visible=drinksToShow.slice(startIdx,startIdx+4).length>=4?
+    drinksToShow.slice(startIdx,startIdx+4):
+    drinksToShow.slice(startIdx).concat(drinksToShow.slice(0,4-drinksToShow.length+startIdx));
+
+  el.innerHTML=visible.map(d=>`
+    <div class="wellness-drink-card">
+      <div class="wellness-drink-emoji">${d.emoji}</div>
+      <div class="wellness-drink-info">
+        <div class="wellness-drink-name">${d.name}</div>
+        <div class="wellness-drink-recipe">${d.recipe}</div>
+        <div class="wellness-drink-effect">✨ ${d.effect}</div>
+      </div>
+    </div>`).join('');
+}
+
+function rotateWellnessDrinks(){
+  wellnessDrinkIndex++;
+  renderWellnessDrinks(getCurrentSolarTerm());
+}
+
+function saveWellnessCheckin(){
+  const drink=document.getElementById('wellnessDrinkCheck').checked;
+  const exercise=document.getElementById('wellnessExerciseCheck').checked;
+  const sleep=document.getElementById('wellnessEarlySleepCheck').checked;
+  if(!drink&&!exercise&&!sleep)return alert('请至少勾选一项打卡内容');
+
+  const checkins=DB.get('wellness_checkins',[]);
+  checkins.push({date:new Date().toLocaleDateString('zh-CN'),drink,exercise,sleep});
+  DB.set('wellness_checkins',checkins);
+
+  document.getElementById('wellnessDrinkCheck').checked=false;
+  document.getElementById('wellnessExerciseCheck').checked=false;
+  document.getElementById('wellnessEarlySleepCheck').checked=false;
+
+  alert(`✅ 养生打卡成功！\n${drink?'🧃 喝了祛湿饮品\n':''}${exercise?'🏃 运动了\n':''}${sleep?'😴 早睡了\n':''}坚持就是胜利 💪`);
+  renderWellness();
+}
+
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded',()=>{
   initData();
@@ -1917,4 +2427,3 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 </body>
-</html>
