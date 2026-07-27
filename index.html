@@ -1659,7 +1659,7 @@ function editWeight(i){const w=prompt('修改体重：',DB.get('weights',[])[i]?
 function deleteWeight(i){if(confirm('确定删除？')){const weights=DB.get('weights',[]);weights.splice(i,1);DB.set('weights',weights);renderDiet()}}
 function toggleGeneralCheckin(){}
 function uploadGeneralPhoto(){alert('上传照片（演示功能）')}
-function uploadGeneralVideo(){alert('上传视频（演示功能）'}
+function uploadGeneralVideo(){alert('上传视频（演示功能）')}
 
 // ==================== Reading Module ====================
 function renderReading(){
