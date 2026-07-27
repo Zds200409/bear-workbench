@@ -371,12 +371,17 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         <div class="card-header">
           <div class="card-title"><span class="icon">✍️</span> 内容生成</div>
         </div>
-        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">每天30分钟，悄悄变优秀。</p>
-        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px">核心：让AI帮你理清思路，结合个人实践经验，为大家梳理可落地的方法与步骤，无论你处于哪个阶段，都能找到适合...</p>
+        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">基于你的赛道 + 今日真实热点，自动生成可发布的公众号文章草稿。</p>
+        <div class="input-group" style="margin-bottom:14px">
+          <label class="input-label">🎯 你的赛道 / 领域</label>
+          <input class="input" id="wechatNiche" placeholder="如：个人成长 / 理财 / 职场 / 育儿..." style="font-size:13px" onchange="DB.set('wechat_niche',this.value.trim())">
+        </div>
         <div class="btn-group">
           <button class="btn btn-primary btn-sm" onclick="generateWechatContent()">✨ 立即生成</button>
-          <button class="btn btn-outline btn-sm" onclick="saveWechatDraft()">💾 存入草稿箱（模拟）</button>
+          <button class="btn btn-outline btn-sm" onclick="saveWechatDraft()">💾 存入草稿</button>
+          <button class="btn btn-outline btn-sm" onclick="copyWechatContent()">📋 复制</button>
         </div>
+        <textarea class="note-area" id="wechatDraft" style="margin-top:14px;min-height:260px;font-size:13px;line-height:1.7" placeholder="点击「立即生成」后，这里会出现基于今日热点的公众号文章草稿，可自由编辑..."></textarea>
       </div>
 
       <div class="card">
@@ -1561,11 +1566,77 @@ function copyXhsNote(i){
 
 // ==================== WeChat Auto Publish ====================
 function generateWechatContent(){
-  alert('✨ 正在为您生成公众号内容...\n\n基于您的领域和近期热点，AI将生成一篇高质量原创文章框架。');
+  const nicheInput=document.getElementById('wechatNiche');
+  let niche=(nicheInput&&nicheInput.value.trim())||DB.get('wechat_niche','')||'';
+  if(niche)DB.set('wechat_niche',niche);
+  const topic=currentHotNews[0]?.title||currentHotNews[0]?.word||'';
+  if(!topic){
+    alert('⚠️ 还没有获取到今日热点。\n请先到「每日热点新闻」点击🔄刷新，等出现真实热榜后，再来生成公众号内容。');
+    return;
+  }
+  const topics=currentHotNews.slice(0,5).map(n=>n.title||n.word).filter(Boolean);
+  const draft=buildWechatArticle(niche||'个人成长',topic,topics);
+  document.getElementById('wechatDraft').value=draft;
+  DB.set('wechat_draft',draft);
+  alert('✅ 已基于今日热点「'+topic+'」生成公众号草稿，可编辑后复制发布。');
 }
+
+// 基于赛道 + 真实热点，生成结构化公众号文章草稿
+function buildWechatArticle(niche,topic,topics){
+  const d=new Date();
+  const today=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric'});
+  const week=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  const sub=[
+    `一、为什么「${topic}」值得你现在关注`,
+    `二、3个普通人能立刻上手的切入点`,
+    `三、把热点变成你的长期资产`
+  ];
+  const body=sub.map((st,i)=>`${st}\n${buildWechatPara(niche,topic,topics,i)}`).join('\n\n');
+  const extraTopic=topics[1]?`顺便提一句，今天「${topics[1]}」也在热榜，可以作为下一篇的选题储备。`:'';
+  return `【标题候选】
+1. ${topic}刷屏后，我整理了这份给普通人的行动清单
+2. 别只吃瓜了：从「${topic}」里我能学到的3件事
+3. ${today}${week}热点复盘｜${niche}视角下的「${topic}」
+
+【导语】
+今天「${topic}」冲上热搜，朋友圈都在转。但作为关注${niche}的人，我更想和你聊聊：这件事和我们每天的成长、选择到底有什么关系？这篇不追热点本身，只聊能落地的部分。
+
+【正文】
+${body}
+
+【金句】
+「热点会过去，但你在热点里长出的判断力，会留下。」
+
+【结尾｜引导互动】
+以上就是我对「${topic}」的${niche}视角拆解。你是怎么看这件事的？评论区聊聊，或者点个「在看」让更多同频的人看到。
+${extraTopic}
+
+—
+本文由「熊熊工作台」基于${today}真实热榜自动生成草稿，发布前请结合你的真实经历润色。`;
+}
+
+function buildWechatPara(niche,topic,topics,i){
+  const parts=[
+    `热点归热点，回到${niche}这件事上，最该警惕的是「只看热闹不行动」。我的做法：先把情绪放下，问自己——这条信息里，哪一点是我下周用得上的？哪怕只抓一个，都比转十条朋友圈有用。`,
+    `别贪多。挑一件你今天就能做的小事：比如花20分钟梳理相关知识、把看到的案例记进笔记、或者和一位朋友聊清楚你的看法。${niche}的进步，从来都是「小步快跑」堆出来的。`,
+    `最后说句实在的：热点是最好的流量入口，但不是目的。借这次热度，把你的${niche}人设和内容体系再夯实一点，等下一个热点来的时候，你已经不是旁观者了。`
+  ];
+  return parts[i]||parts[0];
+}
+
 function saveWechatDraft(){
-  alert('💾 已存入草稿箱！（模拟功能）\n实际使用时可对接微信公众号API实现自动保存。');
+  const v=(document.getElementById('wechatDraft').value||'').trim();
+  if(!v){alert('草稿还是空的，先点「立即生成」吧。');return;}
+  DB.set('wechat_draft',v);
+  alert('💾 已存入本地草稿（手机端持久保存）。\n如需真正推送到公众号，可后续对接微信公众平台API。');
 }
+
+function copyWechatContent(){
+  const v=(document.getElementById('wechatDraft').value||'').trim();
+  if(!v){alert('还没有内容可复制，先生成吧。');return;}
+  copyXhsText(v);
+}
+
 function toggleAutoPublish(el){el.classList.toggle('on')}
 
 // ==================== Daily News - 真实热榜（多源容错） ====================
@@ -2500,6 +2571,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     const el=document.getElementById(id);
     if(el)el.onblur=function(){DB.set(id+'_content',this.value)};
   });
+  // 公众号：回载赛道与草稿
+  const wn=document.getElementById('wechatNiche');
+  if(wn){wn.value=DB.get('wechat_niche','')||'';wn.onchange=function(){DB.set('wechat_niche',this.value.trim())};}
+  const wd=document.getElementById('wechatDraft');
+  if(wd){wd.value=DB.get('wechat_draft','')||'';wd.onblur=function(){DB.set('wechat_draft',this.value)};}
 });
 </script>
 </body>
