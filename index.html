@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🐻 熊熊工作台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#5a9a6e;
+  --primary-dark:#4a7f5a;
+  --primary-light:#7ab88c;
+  --bg-main:#f0f4ef;
+  --bg-sidebar:#5a9a6e;
+  --bg-card:#ffffff;
+  --text-primary:#2d3436;
+  --text-secondary:#636e72;
+  --text-light:#b2bec3;
+  --border:#e8efe8;
+  --shadow:0 2px 12px rgba(90,154,110,0.12);
+  --radius:16px;
+  --radius-sm:10px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB',sans-serif;background:var(--bg-main);color:var(--text-primary);min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+
+/* ===== Layout ===== */
+.app-container{display:flex;min-height:100vh;max-width:100%}
+.sidebar{width:72px;min-width:72px;background:var(--bg-sidebar);display:flex;flex-direction:column;align-items:center;padding-top:12px;padding-bottom:calc(60px + var(--safe-bottom));position:fixed;left:0;top:0;bottom:0;z-index:100;overflow-y:auto;overflow-x:hidden}
+.sidebar-logo{color:#fff;font-size:13px;font-weight:700;text-align:center;margin-bottom:20px;line-height:1.3;writing-mode:vertical-lr;letter-spacing:3px}
+.sidebar-nav{display:flex;flex-direction:column;gap:4px;width:100%;align-items:center;padding:0 6px}
+.nav-item{width:56px;height:56px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,0.75);cursor:pointer;transition:all .25s ease;position:relative;font-size:10px;gap:3px;text-decoration:none}
+.nav-item .nav-icon{font-size:22px;line-height:1}
+.nav-item .nav-label{font-size:9px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52px}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,0.22);color:#fff;transform:scale(1.05)}
+.nav-item.active::before{content:'';position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:3px;height:24px;background:#fff;border-radius:3px}
+
+.main-content{margin-left:72px;flex:1;padding:16px 20px calc(80px + var(--safe-bottom));max-width:calc(100vw - 72px);width:100%}
+
+/* ===== Page System ===== */
+.page{display:none;animation:fadeIn .3s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== Header ===== */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.page-title{font-size:22px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px}
+.page-title .title-icon{font-size:26px}
+.page-badge{background:var(--primary);color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600}
+
+/* ===== Cards ===== */
+.card{background:var(--bg-card);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px}
+.card-title .icon{font-size:17px}
+.card-subtitle{font-size:11px;color:var(--text-secondary);margin-top:2px}
+
+/* ===== Calendar ===== */
+.calendar-wrap{background:var(--bg-card);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.calendar-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.calendar-month{font-size:15px;font-weight:700}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal-head{font-size:10px;color:var(--text-secondary);padding:4px 0;font-weight:600}
+.cal-day{font-size:12px;padding:6px 2px;border-radius:10px;cursor:pointer;transition:all .2s;color:var(--text-primary)}
+.cal-day.today{background:var(--primary);color:#fff;font-weight:700}
+.cal-day.selected{background:var(--primary-light);color:#fff}
+.cal-day.other-month{color:var(--text-light)}
+.cal-day:hover:not(.today):not(.selected){background:var(--bg-main)}
+
+/* ===== Tasks ===== */
+.task-list{display:flex;flex-direction:column;gap:8px}
+.task-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--bg-main);border-radius:var(--radius-sm);transition:all .2s}
+.task-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--primary);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:1px}
+.task-check.checked{background:var(--primary);color:#fff;font-size:12px}
+.task-body{flex:1;min-width:0}
+.task-time{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:3px}
+.task-text{font-size:13px;line-height:1.5;color:var(--text-primary)}
+.task-item.done .task-time,.task-item.done .task-text{text-decoration:line-through;color:var(--text-light)}
+
+/* ===== Buttons ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .25s;outline:none}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:active{transform:scale(0.96);background:var(--primary-dark)}
+.btn-outline{background:transparent;color:var(--primary);border:1.5px solid var(--primary)}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:10px}
+.btn-block{width:100%}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ===== Tags ===== */
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;gap:3px}
+.tag-green{background:#e8f5ec;color:var(--primary-dark)}
+.tag-orange{background:#fef3e6;color:#e67e22}
+.tag-blue{background:#eaf2fb;color:#2980b9}
+.tag-red{background:#fdeaea;color:#e74c3c}
+.tag-gray{background:#f0f0f0;color:#666}
+
+/* ===== Input ===== */
+.input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;transition:border .2s;background:#fafcfa}
+.input:focus{border-color:var(--primary)}
+textarea.input{resize:vertical;min-height:80px;font-family:inherit}
+.input-group{margin-bottom:12px}
+.input-label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;display:block}
+
+/* ===== Toggle Switch ===== */
+.toggle-switch{position:relative;width:48px;height:26px;background:#ddd;border-radius:13px;cursor:pointer;transition:background .3s;flex-shrink:0}
+.toggle-switch.on{background:var(--primary)}
+.toggle-switch::after{content:'';position:absolute;width:22px;height:22px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle-switch.on::after{transform:translateX(22px)}
+
+/* ===== Xiaohongshu Module ===== */
+.xhs-card{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;position:relative}
+.xhs-card .card-num{position:absolute;top:-8px;right:12px;background:var(--primary);color:#fff;font-size:10px;padding:2px 8px;border-radius:8px;font-weight:700}
+.xhs-price{font-size:18px;font-weight:800;color:#e67e22}
+.xhs-price small{font-size:12px;color:var(--text-secondary);font-weight:400}
+.xhs-tags{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0}
+
+/* ===== News Module ===== */
+.hot-rank{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.rank-num{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
+.rank-num.top1{background:#ff4757}
+.rank-num.top2{background:#ff6b4a}
+.rank-num.top3{background:#ffa502}
+.rank-num.normal{background:var(--text-light)}
+.hot-value{font-size:12px;color:var(--text-secondary);margin-left:auto}
+.news-tag-list{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.news-chip{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:1.5px solid transparent}
+.news-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.news-chip:not(.active){background:var(--bg-main);color:var(--text-secondary)}
+.news-chip:not(.active):active{background:var(--border)}
+
+/* ===== Diet Module ===== */
+.meal-tabs{display:flex;gap:8px;margin-bottom:14px}
+.meal-tab{flex:1;padding:10px 8px;text-align:center;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:1.5px solid var(--border);background:var(--bg-card)}
+.meal-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.food-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-main);border-radius:var(--radius-sm);margin-bottom:8px}
+.food-img{width:44px;height:44px;border-radius:10px;object-fit:cover;background:var(--border)}
+.food-info{flex:1}
+.food-name{font-size:13px;font-weight:600}
+.food-detail{font-size:11px;color:var(--text-secondary)}
+
+/* ===== English Module ===== */
+.streak-counter{display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:var(--radius);color:#fff;margin-bottom:14px}
+.streak-number{font-size:40px;font-weight:900;line-height:1}
+.streak-unit{font-size:13px;opacity:0.9}
+.word-card{background:var(--bg-main);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
+.word-en{font-size:18px;font-weight:700;color:var(--primary);margin-bottom:4px}
+.word-cn{font-size:13px;color:var(--text-secondary)}
+
+/* ===== Weekly Review ===== */
+.review-stat{display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg-main);border-radius:var(--radius-sm);margin-bottom:8px}
+.review-stat .stat-label{font-size:13px;color:var(--text-secondary)}
+.review-stat .stat-value{font-size:18px;font-weight:800;color:var(--primary)}
+.progress-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;background:var(--primary);border-radius:4px;transition:width .5s}
+
+/* ===== Reading Module ===== */
+.read-book{display:flex;gap:12px;padding:14px;background:var(--bg-main);border-radius:var(--radius-sm);margin-bottom:10px}
+.read-cover{width:56px;height:76px;border-radius:6px;object-fit:cover;background:var(--border);flex-shrink:0}
+.read-info{flex:1}
+.read-title{font-size:14px;font-weight:700;margin-bottom:3px}
+.read-author{font-size:11px;color:var(--text-secondary);margin-bottom:6px}
+.read-progress{font-size:12px;color:var(--primary);font-weight:600}
+.read-input-row{display:flex;gap:8px;margin-bottom:10px}
+.read-input-row .input{flex:1}
+
+/* ===== Settings ===== */
+.setting-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.setting-item:last-child{border-bottom:none}
+.setting-info{flex:1}
+.setting-name{font-size:14px;font-weight:600}
+.setting-desc{font-size:11px;color:var(--text-secondary);margin-top:2px}
+
+/* ===== Notes ===== */
+.note-area{width:100%;padding:12px;border:1.5px dashed var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-secondary);resize:vertical;min-height:60px;font-family:inherit;outline:none;background:#fafcfa}
+.note-area:focus{border-color:var(--primary-light);border-style:solid}
+
+/* ===== Empty State ===== */
+.empty-state{text-align:center;padding:30px 16px;color:var(--text-light)}
+.empty-state .empty-icon{font-size:48px;margin-bottom:10px}
+.empty-state p{font-size:13px}
+
+/* ===== Floating Action Button (Mobile) ===== */
+.fab{display:none;position:fixed;right:20px;bottom:calc(80px + var(--safe-bottom));width:52px;height:52px;border-radius:50%;background:var(--primary);color:#fff;font-size:24px;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(90,154,110,0.35);z-index:99;cursor:pointer;border:none;transition:transform .2s}
+.fab:active{transform:scale(0.9)}
+
+/* ===== Add Modal ===== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--bg-card);border-radius:20px 20px 0 0;width:100%;max-width:500px;padding:24px 20px calc(24px + var(--safe-bottom));animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-title{font-size:18px;font-weight:800;text-align:center;margin-bottom:18px}
+.modal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;background:var(--bg-main);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text-secondary)}
+
+/* ===== Responsive ===== */
+@media(max-width:768px){
+  .sidebar{width:100%;height:auto;min-height:auto;position:fixed;bottom:0;left:0;right:0;top:auto;padding:8px 0 calc(8px + var(--safe-bottom));flex-direction:row;z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,0.08)}
+  .sidebar-logo{display:none}
+  .sidebar-nav{flex-direction:row;justify-content:space-around;width:100%;padding:0 4px}
+  .nav-item{width:auto;height:auto;padding:6px 8px;border-radius:10px;gap:1px}
+  .nav-item .nav-icon{font-size:20px}
+  .nav-item .nav-label{font-size:9px}
+  .nav-item.active::before{display:none}
+  .main-content{margin-left:0;padding:14px 14px calc(70px + var(--safe-bottom));max-width:100vw}
+  .fab{display:flex}
+  .page-title{font-size:19px}
+  .card{padding:14px;border-radius:14px}
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--primary-light);border-radius:4px}
+
+/* Animations */
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.pulse{animation:pulse 2s infinite}
+
+/* Image upload preview */
+.img-preview{width:100%;height:120px;border-radius:var(--radius-sm);object-fit:cover;background:var(--border);margin-bottom:8px;display:none}
+.img-preview.show{display:block}
+.upload-hint{display:flex;align-items:center;justify-content:center;gap:6px;padding:20px;border:2px dashed var(--border);border-radius:var(--radius-sm);cursor:pointer;color:var(--text-secondary);font-size:13px;transition:all .2s}
+.upload-hint:active{border-color:var(--primary);color:var(--primary);background:#f0f8f3}
+
+/* History list */
+.history-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-main);border-radius:var(--radius-sm);margin-bottom:6px}
+.history-thumb{width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--border);flex-shrink:0}
+.history-info{flex:1}
+.history-date{font-size:11px;color:var(--text-secondary)}
+.history-actions{display:flex;gap:6px}
+.icon-btn{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:background .2s;border:none;background:transparent}
+.icon-btn:active{background:var(--border)}
+
+/* Section divider */
+.section-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;margin:16px 0 10px;color:var(--text-primary)}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Sidebar / Bottom Nav -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🐻 熊熊<br>工作台</div>
+    <div class="sidebar-nav" id="navList"></div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+
+    <!-- ========== 今日计划 ========== -->
+    <section class="page active" id="page-plan" data-page="plan">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">📅</span> 今日计划</h1>
+        <span class="page-badge" id="todayDateBadge"></span>
+      </div>
+
+      <div class="calendar-wrap" id="calendarWrap"></div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📋</span> 今日固定行程</div>
+          <button class="btn btn-sm btn-primary" onclick="openAddTaskModal()">＋ 添加</button>
+        </div>
+        <div class="task-list" id="taskList"></div>
+      </div>
+    </section>
+
+    <!-- ========== 小红书博主 ========== -->
+    <section class="page" id="page-xhs" data-page="xhs">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">📕</span> 小红书博主</h1>
+        <span class="page-badge" id="xhsCount">0 / 7</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">💾</span> 虚拟资料存储</div>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">每日记录选题/灵感/数据，随时回顾调用。结合当下热点发挥。</p>
+        <div id="xhsStorageList"></div>
+        <button class="btn btn-sm btn-primary btn-block" style="margin-top:10px" onclick="addXhsNote()">＋ 新增笔记</button>
+      </div>
+    </section>
+
+    <!-- ========== 公众号自动发布 ========== -->
+    <section class="page" id="page-wechat" data-page="wechat">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">📮</span> 公众号自动发布</h1>
+        <span class="page-badge" id="wechatCount">3 / 7</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">✍️</span> 内容生成</div>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">每天30分钟，悄悄变优秀。</p>
+        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px">核心：让AI帮你理清思路，结合个人实践经验，为大家梳理可落地的方法与步骤，无论你处于哪个阶段，都能找到适合...</p>
+        <div class="btn-group">
+          <button class="btn btn-primary btn-sm" onclick="generateWechatContent()">✨ 立即生成</button>
+          <button class="btn btn-outline btn-sm" onclick="saveWechatDraft()">💾 存入草稿箱（模拟）</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">⚙️</span> 自动发布设置</div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">生成并自动发布时间</div>
+            <div class="setting-desc">设定后将在指定时间自动执行</div>
+          </div>
+          <input type="time" class="input" id="autoPublishTime" value="09:30" style="width:100px;padding:6px 10px;font-size:13px">
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">自动发布开关</div>
+          </div>
+          <div class="toggle-switch on" id="autoPublishToggle" onclick="toggleAutoPublish(this)"></div>
+        </div>
+        <div class="input-group" style="margin-top:14px">
+          <label class="input-label">📝 备注</label>
+          <textarea class="note-area" id="wechatNotes" placeholder="写点什么，怕忘了就记在这里..."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 每日热点新闻 ========== -->
+    <section class="page" id="page-news" data-page="news">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">🔥</span> 每日热点新闻</h1>
+        <span class="page-badge" id="newsCount">5 / 7</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📊</span> 热点排行</div>
+          <button class="btn btn-sm btn-primary" onclick="refreshNews()">🔄 刷新热点</button>
+        </div>
+        <div id="hotRankList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">💡</span> 选题建议</div>
+        </div>
+        <div id="topicSuggestions"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">✂️</span> 热点二创</div>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">选择平台，结合当日热点生成二创文案方向。</p>
+        <div class="news-tag-list" id="newsTagList">
+          <span class="news-chip active" data-tag="xhs">小红书</span>
+          <span class="news-chip" data-tag="douyin">抖音热点</span>
+          <span class="news-chip" data-tag="wechat">公众号热点</span>
+        </div>
+        <div id="hotCreativeContent" style="margin-top:12px"></div>
+      </div>
+
+      <div class="input-group" style="margin-top:4px">
+        <label class="input-label">📝 备注</label>
+        <textarea class="note-area" id="newsNotes" placeholder="写点什么，怕忘了就记在这里..."></textarea>
+      </div>
+    </section>
+
+    <!-- ========== 英语打卡 ========== -->
+    <section class="page" id="page-english" data-page="english">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">🔤</span> 英语打卡</h1>
+        <span class="page-badge" id="englishCount">7 / 7</span>
+      </div>
+
+      <div class="streak-counter">
+        <div>
+          <div class="streak-number" id="streakDays">1</div>
+          <div class="streak-unit">天连续打卡 ✅ 今日已打卡</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📸</span> 上传打卡内容</div>
+        </div>
+        <div class="btn-group" style="margin-bottom:12px">
+          <button class="btn btn-primary btn-sm" onclick="uploadEnglishPhoto()">🖼️ 上传图片</button>
+          <button class="btn btn-outline btn-sm" onclick="uploadEnglishVideo()">🎬 上传视频</button>
+        </div>
+        <img class="img-preview" id="englishImgPreview">
+        <div class="upload-hint" onclick="document.getElementById('englishFileInput').click()">
+          📷 点击上传或拖拽
+        </div>
+        <input type="file" id="englishFileInput" accept="image/*,video/*" style="display:none" onchange="handleEnglishUpload(event)">
+        <div class="input-group" style="margin-top:12px">
+          <input class="input" id="englishTodayWord" placeholder="今日新学单词（可选），如：serendipity">
+        </div>
+        <button class="btn btn-primary btn-block" onclick="submitEnglishCheckin()" id="englishCheckinBtn">✅ 完成打卡</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📖</span> 今日练字</div>
+        </div>
+        <img class="img-preview show" id="handwritingPreview" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 160'><rect fill='%23f5f0e8' width='120' height='160'/><text x='60' y='85' text-anchor='middle' fill='%23ccc' font-size='12'>练字照片</text></svg>" style="height:140px">
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📜</span> 历史记录</div>
+        </div>
+        <div id="englishHistory"></div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">📝 备注</label>
+        <textarea class="note-area" id="englishNotes" placeholder="写点什么，怕忘了就记在这里..."></textarea>
+      </div>
+    </section>
+
+    <!-- ========== 饮食·打卡（合并到英语打卡区域，但作为独立模块） ========== -->
+    <section class="page" id="page-diet" data-page="diet">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">🍱</span> 饮食·打卡</h1>
+        <span class="page-badge" id="dietCount">6 / 7</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🍽️</span> 今日三餐</div>
+        </div>
+        <div class="meal-tabs" id="mealTabs">
+          <div class="meal-tab active" data-meal="breakfast">🌅 早餐</div>
+          <div class="meal-tab" data-meal="lunch">☀️ 午餐</div>
+          <div class="meal-tab" data-meal="dinner">🌙 晚餐</div>
+        </div>
+        <div id="mealContent"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📸</span> 饮食记录</div>
+        </div>
+        <button class="btn btn-primary btn-sm btn-block" onclick="addFoodPhoto()">➕ 上传食物照片并记录</button>
+        <div id="foodRecordList" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">⚖️</span> 体重记录</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input class="input" id="weightInput" placeholder="今日体重 kg" type="number" step="0.1">
+          <button class="btn btn-primary btn-sm" onclick="saveWeight()">保存</button>
+        </div>
+        <div id="weightHistory" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">✅</span> 普通打卡</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <input type="checkbox" id="generalCheckin" style="width:20px;height:20px;accent-color:var(--primary)" onchange="toggleGeneralCheckin()">
+          <span style="font-size:13px">打卡内容，如：早睡早起</span>
+        </div>
+        <input class="input" id="generalCheckinText" placeholder="打卡内容...">
+        <div class="btn-group" style="margin-top:8px">
+          <button class="btn btn-sm btn-outline" onclick="uploadGeneralPhoto()">🖼️ 上传照片</button>
+          <button class="btn btn-sm btn-outline" onclick="uploadGeneralVideo()">🎬 上传视频</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🏆</span> 全部打卡</div>
+        </div>
+        <div id="allCheckins"></div>
+      </div>
+    </section>
+
+    <!-- ========== 每周复盘 ========== -->
+    <section class="page" id="page-review" data-page="review">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">📊</span> 每周复盘</h1>
+        <span class="page-badge" id="weekLabel"></span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🎯</span> 本周概览</div>
+        </div>
+        <div class="review-stat">
+          <span class="stat-label">计划完成率</span>
+          <span class="stat-value" id="weekPlanRate">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="weekPlanBar" style="width:0%"></div></div>
+
+        <div class="review-stat" style="margin-top:10px">
+          <span class="stat-label">英语打卡天数</span>
+          <span class="stat-value" id="weekEnglishDays">0 / 7</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="weekEnglishBar" style="width:0%"></div></div>
+
+        <div class="review-stat" style="margin-top:10px">
+          <span class="stat-label">小红书产出</span>
+          <span class="stat-value" id="weekXhsCount">0 篇</span>
+        </div>
+
+        <div class="review-stat" style="margin-top:10px">
+          <span class="stat-label">公众号发布</span>
+          <span class="stat-value" id="weekWechatCount">0 篇</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">✨</span> 本周亮点</div>
+        </div>
+        <textarea class="note-area" id="weekHighlights" placeholder="这周最值得骄傲的3件事..." style="min-height:90px"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🔧</span> 改进方向</div>
+        </div>
+        <textarea class="note-area" id="weekImprovements" placeholder="下周想要改进的地方..." style="min-height:90px"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📝</span> 周记</div>
+        </div>
+        <textarea class="note-area" id="weeklyJournal" placeholder="本周总结与思考..." style="min-height:100px"></textarea>
+        <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="saveWeeklyReview()">💾 保存本周复盘</button>
+      </div>
+    </section>
+
+    <!-- ========== 每日阅读（新增） ========== -->
+    <section class="page" id="page-reading" data-page="reading">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">📚</span> 每日阅读</h1>
+        <span class="page-badge" id="readingStreak">连续 0 天</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📖</span> 正在阅读</div>
+          <button class="btn btn-sm btn-primary" onclick="openAddBookModal()">＋ 添加书籍</button>
+        </div>
+        <div id="readingBookList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📝</span> 今日阅读记录</div>
+        </div>
+        <div class="read-input-row">
+          <select class="input" id="readingBookSelect"><option value="">选择书籍...</option></select>
+        </div>
+        <div class="read-input-row">
+          <input class="input" id="readingPages" type="number" placeholder="今天读了多少页？" min="1">
+          <button class="btn btn-primary btn-sm" onclick="logReadingProgress()">记录</button>
+        </div>
+        <div class="input-group" style="margin-top:10px">
+          <label class="input-label">💭 读后感 / 摘抄</label>
+          <textarea class="note-area" id="readingNote" placeholder="记录今天的感悟、金句摘抄..."></textarea>
+        </div>
+        <button class="btn btn-primary btn-block" style="margin-top:8px" onclick="submitReadingLog()">✅ 提交今日阅读</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📜</span> 阅读历史</div>
+        </div>
+        <div id="readingHistory"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📈</span> 阅读统计</div>
+        </div>
+        <div class="review-stat">
+          <span class="stat-label">本月累计阅读</span>
+          <span class="stat-value" id="monthPages">0 页</span>
+        </div>
+        <div class="review-stat">
+          <span class="stat-label">本月读完</span>
+          <span class="stat-value" id="monthBooksFinished">0 本</span>
+        </div>
+        <div class="review-stat">
+          <span class="stat-label">在读数量</span>
+          <span class="stat-value" id="currentlyReading">0 本</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 设置 ========== -->
+    <section class="page" id="page-settings" data-page="settings">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">⚙️</span> 设置</h1>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">👤</span> 个人信息</div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">昵称</label>
+          <input class="input" id="settingNickname" placeholder="你的昵称">
+        </div>
+        <div class="input-group">
+          <label class="input-label">目标</label>
+          <input class="input" id="settingGoal" placeholder="例如：55岁提前退休">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">⏰</span> 提醒设置</div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">每日计划提醒</div>
+            <div class="setting-desc">每天早上提醒查看今日计划</div>
+          </div>
+          <div class="toggle-switch on" id="planReminderToggle" onclick="toggleSwitch(this)"></div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">英语打卡提醒</div>
+            <div class="setting-desc">每晚提醒完成英语学习</div>
+          </div>
+          <div class="toggle-switch on" id="englishReminderToggle" onclick="toggleSwitch(this)"></div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">阅读提醒</div>
+            <div class="setting-desc">睡前提醒阅读打卡</div>
+          </div>
+          <div class="toggle-switch" id="readingReminderToggle" onclick="toggleSwitch(this)"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🗂️</span> 数据管理</div>
+        </div>
+        <div class="btn-group" style="flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="exportData()">📤 导出数据</button>
+          <button class="btn btn-outline btn-sm" onclick="importDataPrompt()">📥 导入数据</button>
+          <button class="btn btn-outline btn-sm" style="color:#e74c3c;border-color:#e74c3c" onclick="clearAllData()">🗑️ 清空所有数据</button>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">ℹ️</span> 关于</div>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.8">
+          🐻 熊熊工作台 v1.0<br>
+          个人效率管理工具 · 移动端优先<br><br>
+          功能：今日计划 / 小红书博主 / 公众号发布<br>
+          热点新闻 / 英语打卡 / 饮食打卡<br>
+          每周复盘 / 每日阅读 / 设置
+        </p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- FAB Button -->
+<button class="fab" id="fabBtn" onclick="handleFabClick()">＋</button>
+
+<!-- Add Task Modal -->
+<div class="modal-overlay" id="addTaskModal">
+  <div class="modal-box" style="position:relative">
+    <div class="modal-close" onclick="closeModal('addTaskModal')">✕</div>
+    <div class="modal-title">添加任务</div>
+    <div class="input-group">
+      <label class="input-label">⏰ 时间</label>
+      <input class="input" id="newTaskTime" type="time" value="09:00">
+    </div>
+    <div class="input-group">
+      <label class="input-label">📝 任务内容</label>
+      <input class="input" id="newTaskText" placeholder="输入任务描述...">
+    </div>
+    <button class="btn btn-primary btn-block" onclick="addNewTask()">确认添加</button>
+  </div>
+</div>
+
+<!-- Add Book Modal -->
+<div class="modal-overlay" id="addBookModal">
+  <div class="modal-box" style="position:relative">
+    <div class="modal-close" onclick="closeModal('addBookModal')">✕</div>
+    <div class="modal-title">添加书籍</div>
+    <div class="input-group">
+      <label class="input-label">📖 书名</label>
+      <input class="input" id="newBookTitle" placeholder="输入书名">
+    </div>
+    <div class="input-group">
+      <label class="input-label">✍️ 作者</label>
+      <input class="input" id="newBookAuthor" placeholder="作者名称">
+    </div>
+    <div class="input-group">
+      <label class="input-label">📄 总页数</label>
+      <input class="input" id="newBookPages" type="number" placeholder="总页数" min="1">
+    </div>
+    <button class="btn btn-primary btn-block" onclick="addNewBook()">确认添加</button>
+  </div>
+</div>
+
+<script>
+// ==================== Data Store ====================
+const DB = {
+  get(key, def=null){try{return JSON.parse(localStorage.getItem('bear_workbench_'+key))||def}catch(e){return def}},
+  set(key,val){localStorage.setItem('bear_workbench_'+key,JSON.stringify(val))},
+  remove(key){localStorage.removeItem('bear_workbench_'+key)}
+};
+
+// Initialize default data
+function initData(){
+  if(!DB.get('tasks')) DB.set('tasks',[
+    {id:1,time:'07:00',text:'起床 → 排便→洗漱→左右各40分钟+喝水升',done:true},
+    {id:2,time:'07:30',text:'背单词→十本书→数学（约60分钟）',done:true},
+    {id:3,time:'08:00',text:'同角度配料：自动生成今日可上架的虚拟资料',done:false},
+    {id:4,time:'08:30',text:'每日热点推送：自动展示今日热点，并筛选选题建议',done:false},
+    {id:5,time:'09:00',text:'发布第1篇小红书（谭美积基方向）',done:false},
+    {id:6,time:'09:30',text:'公众号：自动生成今日公众号文章',done:false},
+    {id:7,time:'10:00',text:'剪辑起势剪辑片内容（准备当天素材）',done:false},
+    {id:8,time:'12:00',text:'发布第2篇小红书 + 吃减肥午餐',done:false},
+    {id:9,time:'13:00',text:'剪辑切片发布5个以上作品',done:false},
+    {id:10,time:'14:00',text:'手机录屏复刻直播（每30分钟切换潮水）',done:false},
+    {id:11,time:'16:00',text:'健身提醒（用另一台手机继续点，虚登33~40分钟）',done:false}
+  ]);
+  if(!DB.get('xhs_notes')) DB.set('xhs_notes',[]);
+  if(!DB.get('english_history')) DB.set('english_history',[]);
+  if(!DB.get('english_streak')) DB.set('english_streak',1);
+  if(!DB.get('english_last_date')) DB.set('english_last_date','');
+  if(!DB.get('books')) DB.set('books',[]);
+  if(!DB.get('reading_logs')) DB.set('reading_logs',[]);
+  if(!DB.get('reading_streak')) DB.set('reading_streak',0);
+  if(!DB.get('food_records')) DB.set('food_records',[]);
+  if(!DB.get('weights')) DB.set('weights',[]);
+  if(!DB.get('weekly_reviews')) DB.set('weekly_reviews',{});
+  if(!DB.get('settings')) DB.set('settings',{nickname:'',goal:'55岁提前退休'});
+  if(!DB.get('checkins')) DB.set('checkins',[]);
+  if(!DB.get('meals')) DB.set('meals',{breakfast:[],lunch:[],dinner:[]});
+}
+
+// ==================== Navigation ====================
+const NAV_ITEMS = [
+  {id:'plan',icon:'📅',label:'今日计划'},
+  {id:'xhs',icon:'📕',label:'小红书博主'},
+  {id:'wechat',icon:'📮',label:'公众号发布'},
+  {id:'news',icon:'🔥',label:'每日热点'},
+  {id:'diet',icon:'🍱',label:'饮食·打卡'},
+  {id:'english',icon:'🔤',label:'英语打卡'},
+  {id:'reading',icon:'📚',label:'每日阅读'},
+  {id:'review',icon:'📊',label:'每周复盘'},
+  {id:'settings',icon:'⚙️',label:'设置'}
+];
+
+let currentPage = 'plan';
+
+function renderNav(){
+  const nav=document.getElementById('navList');
+  nav.innerHTML=NAV_ITEMS.map(item=>`
+    <div class="nav-item ${item.id===currentPage?'active':''}" onclick="switchPage('${item.id}')">
+      <span class="nav-icon">${item.icon}</span>
+      <span class="nav-label">${item.label}</span>
+    </div>`).join('');
+}
+
+function switchPage(pageId){
+  currentPage=pageId;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const target=document.getElementById('page-'+pageId);
+  if(target)target.classList.add('active');
+  renderNav();
+  window.scrollTo({top:0,behavior:'instant'});
+  // Refresh page-specific data
+  if(pageId==='plan')renderCalendar();
+  if(pageId==='xhs')renderXhsNotes();
+  if(pageId==='news')renderNews();
+  if(pageId==='english')renderEnglish();
+  if(pageId==='diet')renderDiet();
+  if(pageId==='reading')renderReading();
+  if(pageId==='review')renderReview();
+  if(pageId==='settings')renderSettings();
+}
+
+// ==================== Calendar ====================
+let selectedDate=new Date();
+
+function renderCalendar(){
+  const wrap=document.getElementById('calendarWrap');
+  const year=selectedDate.getFullYear();
+  const month=selectedDate.getMonth();
+  const today=new Date();
+  const firstDay=new Date(year,month,1);
+  const lastDay=new Date(year,month+1,0);
+  const startPad=firstDay.getDay();
+  
+  const months=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  const weeks=['日','一','二','三','四','五','六'];
+  
+  let days='';
+  weeks.forEach(w=>days+=`<div class="cal-head">${w}</div>`);
+  
+  for(let i=0;i<startPad;i++) days+=`<div class="cal-day other-month">${new Date(year,month,1-i).getDate()}</div>`;
+  for(let d=1;d<=lastDay.getDate();d++){
+    const isToday=today.getFullYear()===year&&today.getMonth()===month&&today.getDate()===d;
+    days+=`<div class="cal-day${isToday?' today':''}" onclick="selectDate(${year},${month},${d})">${d}</div>`;
+  }
+  
+  wrap.innerHTML=`
+    <div class="calendar-header">
+      <span class="calendar-month">${year}年${months[month]}</span>
+      <div style="display:flex;gap:8px">
+        <span style="cursor:pointer;font-size:18px" onclick="changeMonth(-1)">◀</span>
+        <span style="cursor:pointer;font-size:18px" onclick="changeMonth(1)">▶</span>
+      </div>
+    </div>
+    <div class="calendar-grid">${days}</div>`;
+  
+  document.getElementById('todayDateBadge').textContent=formatDateCN(today);
+  renderTasks();
+}
+
+function changeMonth(dir){
+  selectedDate.setMonth(selectedDate.getMonth()+dir);
+  renderCalendar();
+}
+
+function selectDate(y,m,d){
+  selectedDate=new Date(y,m,d);
+  renderCalendar();
+}
+
+function formatDateCN(d){
+  return `${d.getMonth()+1}月${d.getDate()}日 ${['周日','周一','周二','周三','周四','周五','周六'][d.getDay()]}`;
+}
+
+// ==================== Tasks ====================
+function renderTasks(){
+  const list=document.getElementById('taskList');
+  const tasks=DB.get('tasks',[]);
+  if(tasks.length===0){
+    list.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><p>暂无任务，点击上方按钮添加</p></div>';
+    return;
+  }
+  list.innerHTML=tasks.map(t=>`
+    <div class="task-item ${t.done?'done':''}">
+      <div class="task-check ${t.done?'checked':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
+      <div class="task-body">
+        <div class="task-time">${t.time}</div>
+        <div class="task-text">${t.text}</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleTask(id){
+  let tasks=DB.get('tasks',[]);
+  tasks=tasks.map(t=>t.id===id?{...t,done:!t.done}:t);
+  DB.set('tasks',tasks);
+  renderTasks();
+}
+
+function openAddTaskModal(){document.getElementById('addTaskModal').classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+
+function addNewTask(){
+  const time=document.getElementById('newTaskTime').value;
+  const text=document.getElementById('newTaskText').value.trim();
+  if(!text)return alert('请输入任务内容');
+  const tasks=DB.get('tasks',[]);
+  const newId=Math.max(0,...tasks.map(t=>t.id))+1;
+  tasks.push({id:newId,time,text,done:false});
+  DB.set('tasks',tasks.sort((a,b)=>a.time.localeCompare(b.time)));
+  document.getElementById('newTaskText').value='';
+  closeModal('addTaskModal');
+  renderTasks();
+}
+
+// ==================== Xiaohongshu ====================
+function renderXhsNotes(){
+  const notes=DB.get('xhs_notes',[]);
+  const container=document.getElementById('xhsStorageList');
+  document.getElementById('xhsCount').textContent=`${notes.length} / 7`;
+  if(notes.length===0){
+    container.innerHTML='<div class="empty-state"><p>暂无笔记，开始记录吧 ✨</p></div>';
+    return;
+  }
+  container.innerHTML=notes.map((n,i)=>`
+    <div class="xhs-card">
+      <span class="card-num">${i+1}</span>
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">${n.title||'未命名笔记'}</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;line-height:1.6">${n.content}</div>
+      ${n.price?`<div class="xhs-price">💰 建议定价：¥${n.price} <small>(区间 ${n.priceLow||''}-${n.priceHigh||''})</small></div>`:''}
+      ${n.tags?`<div class="xhs-tags">${n.tags.map(t=>`<span class="tag tag-green">#${t}</span>`).join('')}</div>`:''}
+      <div class="btn-group" style="margin-top:8px">
+        <button class="btn btn-sm btn-primary" onclick="refreshXhsNote(${i})">🔄 刷新推荐</button>
+        <button class="btn btn-sm btn-outline" onclick="copyXhsNote(${i})">📋 复制文案</button>
+      </div>
+    </div>`).join('');
+}
+
+function addXhsNote(){
+  const title=prompt('笔记标题：')||'虚拟资料存储';
+  const content=prompt('笔记内容：')||'每日记录最新热点/选题方向';
+  const notes=DB.get('xhs_notes',[]);
+  notes.push({
+    title,content,
+    price:(Math.random()*30+10).toFixed(1),
+    priceLow:'19',
+    priceHigh:'39',
+    tags:['#虚拟','#入门','#保量级']
+  });
+  DB.set('xhs_notes',notes);
+  renderXhsNotes();
+}
+
+function refreshXhsNote(i){alert('已根据最新热点刷新推荐内容 ✓')}
+function copyXhsNote(i){
+  const notes=DB.get('xhs_notes',[]);
+  if(notes[i]){navigator.clipboard?.writeText(notes[i].content);alert('已复制到剪贴板 ✓')}
+}
+
+// ==================== WeChat Auto Publish ====================
+function generateWechatContent(){
+  alert('✨ 正在为您生成公众号内容...\n\n基于您的领域和近期热点，AI将生成一篇高质量原创文章框架。');
+}
+function saveWechatDraft(){
+  alert('💾 已存入草稿箱！（模拟功能）\n实际使用时可对接微信公众号API实现自动保存。');
+}
+function toggleAutoPublish(el){el.classList.toggle('on')}
+
+// ==================== Daily News ====================
+const MOCK_NEWS=[
+  {rank:1,title:'AI 大模型突破性进展',hot:865,tag:'tech'},
+  {rank:2,title:'新能源汽车销量创新高',hot:720,tag:'car'},
+  {rank:3,title:'房地产市场最新政策解读',hot:654,tag:'finance'},
+  {rank:4,title:'暑期旅游热门目的地推荐',hot:543,tag:'travel'},
+  {rank:5,title:'健康饮食新趋势',hot:432,tag:'health'}
+];
+
+const TOPIC_SUGGESTIONS=[
+  {icon:'💡',text:'结合「职业变现」做一期实操拆解，契合你的赛道配方。'},
+  {icon:'📖',text:'围绕「减肥」产品图文，呼应饮食打卡人设。'},
+  {icon:'🔥',text:'用「自律打卡」角度讲时间管理，可联动每周复盘。'}
+];
+
+let newsActiveTag='xhs';
+
+function renderNews(){
+  // Hot rank
+  const rankEl=document.getElementById('hotRankList');
+  rankEl.innerHTML=MOCK_NEWS.map(n=>{
+    let cls=n.rank<=3?'top'+n.rank:'normal';
+    return `<div class="hot-rank">
+      <span class="rank-num ${cls}">${n.rank}</span>
+      <span style="font-size:13px;font-weight:600;flex:1">${n.title}</span>
+      <span class="hot-value">🔥 ${n.hot}万</span>
+    </div>`;
+  }).join('');
+
+  // Topic suggestions
+  const topicEl=document.getElementById('topicSuggestions');
+  topicEl.innerHTML=TOPIC_SUGGESTIONS.map(t=>`
+    <div style="display:flex;gap:8px;padding:10px;background:var(--bg-main);border-radius:var(--radius-sm);margin-bottom:8px">
+      <span style="font-size:20px">${t.icon}</span>
+      <span style="font-size:13px;line-height:1.5">${t.text}</span>
+    </div>`).join('');
+
+  // Creative content
+  renderNewsCreative();
+
+  // Tag click handlers
+  document.querySelectorAll('#newsTagList .news-chip').forEach(chip=>{
+    chip.onclick=function(){
+      document.querySelectorAll('#newsTagList .news-chip').forEach(c=>c.classList.remove('active'));
+      this.classList.add('active');
+      newsActiveTag=this.dataset.tag;
+      renderNewsCreative();
+    };
+  });
+}
+
+function renderNewsCreative(){
+  const el=document.getElementById('hotCreativeContent');
+  const content={
+    xhs:'【小红书笔记】结合热点「考研报名时间公布」，用第一人称分享真实体验，突出情绪价值与干货。标题吸睛+emoji并制造悬念，结尾引导收藏关注。',
+    douyin:'【抖音脚本】热点话题+反转剧情开头，前3秒抓住注意力，中间干货输出，结尾CTA引导关注。',
+    wechat:'【公众号文章】深度分析热点事件背后的行业趋势，结合个人经验给出独特观点，2000字以上长文。'
+  };
+  el.innerHTML=`<div style="padding:14px;background:var(--bg-main);border-radius:var(--radius-sm)">
+    <div style="font-size:13px;line-height:1.8;color:var(--text-primary)">${content[newsActiveTag]}</div>
+    <div class="btn-group" style="margin-top:10px">
+      <button class="btn btn-sm btn-primary" onclick="alert('已生成新的二创方向 ✓')">🔄 换一个热点</button>
+      <button class="btn btn-sm btn-outline" onclick="alert('已复制文案 ✓')">📋 复制文案</button>
+    </div>
+  </div>`;
+}
+
+function refreshNews(){
+  alert('🔄 已刷新最新热点数据！');
+  renderNews();
+}
+
+// ==================== English Check-in ====================
+function renderEnglish(){
+  const streak=DB.get('english_streak',1);
+  document.getElementById('streakDays').textContent=streak;
+  
+  const history=DB.get('english_history',[]);
+  const histEl=document.getElementById('englishHistory');
+  if(history.length===0){
+    histEl.innerHTML='<div class="empty-state"><p>暂无打卡记录</p></div>';
+  }else{
+    histEl.innerHTML=history.slice(-5).reverse().map(h=>`
+      <div class="history-item">
+        <img class="history-thumb" src="${h.thumb||''}" onerror="this.style.display='none'">
+        <div class="history-info">
+          <div style="font-size:13px;font-weight:600">${h.word||'打卡'}</div>
+          <div class="history-date">${h.date}</div>
+        </div>
+        <div class="history-actions">
+          <button class="icon-btn" onclick="alert('查看详情')">👁️</button>
+          <button class="icon-btn" onclick="deleteEnglishHistory(${h.id})" style="color:#e74c3c">🗑️</button>
+        </div>
+      </div>`).join('');
+  }
+  
+  // Check if already checked in today
+  const todayStr=new Date().toISOString().split('T')[0];
+  const lastDate=DB.get('english_last_date','');
+  const btn=document.getElementById('englishCheckinBtn');
+  if(lastDate===todayStr){
+    btn.textContent='✅ 今日已打卡';
+    btn.disabled=true;
+    btn.style.opacity='0.6';
+  }else{
+    btn.textContent='✅ 完成打卡';
+    btn.disabled=false;
+    btn.style.opacity='1';
+  }
+}
+
+function handleEnglishUpload(e){
+  const file=e.target.files[0];
+  if(file){
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      const preview=document.getElementById('englishImgPreview');
+      preview.src=ev.target.result;
+      preview.classList.add('show');
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function uploadEnglishPhoto(){document.getElementById('englishFileInput').click()}
+function uploadEnglishVideo(){document.getElementById('englishFileInput').click()}
+
+function submitEnglishCheckin(){
+  const todayStr=new Date().toISOString().split('T')[0];
+  const lastDate=DB.get('english_last_date','');
+  if(lastDate===todayStr){return alert('今天已经打过卡啦！🎉')}
+  
+  const word=document.getElementById('englishTodayWord').value.trim();
+  const preview=document.getElementById('englishImgPreview').src;
+  const history=DB.get('english_history',[]);
+  history.push({
+    id:Date.now(),
+    date:new Date().toLocaleString('zh-CN'),
+    word:word||'打卡',
+    thumb:preview&&preview.startsWith('data:')?preview:''
+  });
+  DB.set('english_history',history);
+  
+  // Update streak
+  let streak=DB.get('english_streak',1);
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const yesterdayStr=yesterday.toISOString().split('T')[0];
+  if(lastDate===yesterdayStr) streak++;
+  else if(lastDate!==todayStr) streak=1;
+  DB.set('english_streak',streak);
+  DB.set('english_last_date',todayStr);
+  
+  document.getElementById('englishTodayWord').value='';
+  const prev=document.getElementById('englishImgPreview');
+  prev.src='';
+  prev.classList.remove('show');
+  
+  alert(`🎉 打卡成功！连续 ${streak} 天`);
+  renderEnglish();
+}
+
+function deleteEnglishHistory(id){
+  if(!confirm('确定删除这条记录？'))return;
+  let h=DB.get('english_history',[]);
+  h=h.filter(x=>x.id!==id);
+  DB.set('english_history',h);
+  renderEnglish();
+}
+
+// ==================== Diet & Check-in ====================
+let currentMeal='breakfast';
+
+function renderDiet(){
+  // Meal tabs
+  document.querySelectorAll('#mealTabs .meal-tab').forEach(tab=>{
+    tab.onclick=function(){
+      document.querySelectorAll('#mealTabs .meal-tab').forEach(t=>t.classList.remove('active'));
+      this.classList.add('active');
+      currentMeal=this.dataset.meal;
+      renderMealContent();
+    };
+  });
+  renderMealContent();
+  
+  // Food records
+  const foods=DB.get('food_records',[]);
+  const foodEl=document.getElementById('foodRecordList');
+  if(foods.length===0){
+    foodEl.innerHTML='<div class="empty-state"><p>暂无饮食记录</p></div>';
+  }else{
+    foodEl.innerHTML=foods.slice(-5).reverse().map(f=>`
+      <div class="food-item">
+        <img class="food-img" src="${f.img||''}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 44 44%22><rect fill=%22%23eee%22 width=%2244%22 height=%2244%22 rx=%2210%22/></svg>'">
+        <div class="food-info">
+          <div class="food-name">${f.name}</div>
+          <div class="food-detail">${f.amount||''} · ${f.meal||''}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // Weight
+  const weights=DB.get('weights',[]);
+  const weightEl=document.getElementById('weightHistory');
+  if(weights.length>0){
+    const last=weights[weights.length-1];
+    weightEl.innerHTML=`<div style="font-size:13px">${last.weight} kg <span style="color:var(--text-secondary);font-size:11px">${last.date}</span>
+      <button class="icon-btn" style="float:right" onclick="editWeight(${weights.length-1})">✏️</button>
+      <button class="icon-btn" style="float:right;color:#e74c3c" onclick="deleteWeight(${weights.length-1})">🗑️</button>
+    </div>`;
+  }
+
+  // All checkins
+  const checkins=DB.get('checkins',[]);
+  const checkinEl=document.getElementById('allCheckins');
+  if(checkins.length===0){
+    checkinEl.innerHTML='<div class="empty-state"><p>暂无打卡记录</p></div>';
+  }else{
+    checkinEl.innerHTML=checkins.slice(-3).reverse().map(c=>`
+      <div class="food-item">
+        <img class="food-img" src="${c.img||''}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 44 44%22><rect fill=%22%23eee%22 width=%2244%22 height=%2244%22 rx=%2210%22/></svg>'">
+        <div class="food-info">
+          <div class="food-name">${c.text||'打卡'}</div>
+          <div class="food-detail">${c.date}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function renderMealContent(){
+  const meals=DB.get('meals',{breakfast:[],lunch:[],dinner:[]});
+  const mealNames={breakfast:'早餐',lunch:'午餐',dinner:'晚餐'};
+  const items=meals[currentMeal]||[];
+  const el=document.getElementById('mealContent');
+  if(items.length===0){
+    el.innerHTML=`<div class="empty-state"><p>暂无${mealNames[currentMeal]}记录</p>
+      <button class="btn btn-sm btn-primary" onclick="addMealItem()">＋ 添加</button></div>`;
+  }else{
+    el.innerHTML=items.map((item,i)=>`
+      <div class="food-item">
+        <div class="food-info">
+          <div class="food-name">${item.name}</div>
+          <div class="food-detail">${item.detail||''}</div>
+        </div>
+        <button class="icon-btn" onclick="removeMealItem(${i})" style="color:#e74c3c">✕</button>
+      </div>`).join('')+`<button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="addMealItem()">＋ 添加</button>`;
+  }
+}
+
+function addMealItem(){
+  const name=prompt('食物名称：');if(!name)return;
+  const detail=prompt('备注（可选）：')||'';
+  const meals=DB.get('meals',{breakfast:[],lunch:[],dinner:[]});
+  if(!meals[currentMeal])meals[currentMeal]=[];
+  meals[currentMeal].push({name,detail});
+  DB.set('meals',meals);
+  renderMealContent();
+}
+
+function removeMealItem(i){
+  const meals=DB.get('meals',{breakfast:[],lunch:[],dinner:[]});
+  meals[currentMeal].splice(i,1);
+  DB.set('meals',meals);
+  renderMealContent();
+}
+
+function addFoodPhoto(){
+  const name=prompt('食物名称：');if(!name)return;
+  const amount=prompt('份量（如：100g）：')||'';
+  const meals=DB.get('meals',{breakfast:[],lunch:[],dinner:[]});
+  const mealNames={breakfast:'早餐',lunch:'午餐',dinner:'晚餐'};
+  const foods=DB.get('food_records',[]);
+  foods.push({name,amount,meal:mealNames[currentMeal],date:new Date().toLocaleDateString('zh-CN')});
+  DB.set('food_records',foods);
+  renderDiet();
+}
+
+function saveWeight(){
+  const w=document.getElementById('weightInput').value;
+  if(!w)return alert('请输入体重');
+  const weights=DB.get('weights',[]);
+  weights.push({weight:parseFloat(w),date:new Date().toLocaleDateString('zh-CN')});
+  DB.set('weights',weights);
+  document.getElementById('weightInput').value='';
+  renderDiet();
+}
+
+function editWeight(i){const w=prompt('修改体重：',DB.get('weights',[])[i]?.weight);if(w){const weights=DB.get('weights',[]);weights[i].weight=parseFloat(w);DB.set('weights',weights);renderDiet()}}
+function deleteWeight(i){if(confirm('确定删除？')){const weights=DB.get('weights',[]);weights.splice(i,1);DB.set('weights',weights);renderDiet()}}
+
+function toggleGeneralCheckin(){}
+function uploadGeneralPhoto(){alert('上传照片（演示功能）')}
+function uploadGeneralVideo(){alert('上传视频（演示功能）')}
+
+// ==================== Reading Module ====================
+function renderReading(){
+  const books=DB.get('books',[]);
+  const container=document.getElementById('readingBookList');
+  document.getElementById('currentlyReading').textContent=books.filter(b=>!b.finished).length+' 本';
+
+  if(books.length===0){
+    container.innerHTML='<div class="empty-state"><div class="empty-icon">📚</div><p>还没有添加书籍，点击上方按钮添加吧</p></div>';
+  }else{
+    container.innerHTML=books.map(b=>`
+      <div class="read-book">
+        <img class="read-cover" src="${b.cover||''}" onerror="this.style.background='#e8f5ec'">
+        <div class="read-info">
+          <div class="read-title">${b.title}</div>
+          <div class="read-author">${b.author||'未知作者'} · 共${b.totalPages||'?'}页</div>
+          <div class="read-progress">${b.finished?'✅ 已读完':'📖 已读 '+ (b.readPages||0)+'/'+(b.totalPages||'?')+' 页'}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // Book select dropdown
+  const select=document.getElementById('readingBookSelect');
+  select.innerHTML='<option value="">选择书籍...</option>'+books.filter(b=>!b.finished).map(b=>`<option value="${b.id}">${b.title}</option>`).join('');
+
+  // Reading history
+  const logs=DB.get('reading_logs',[]);
+  const histEl=document.getElementById('readingHistory');
+  if(logs.length===0){
+    histEl.innerHTML='<div class="empty-state"><p>暂无阅读记录</p></div>';
+  }else{
+    histEl.innerHTML=logs.slice(-7).reverse().map(l=>`
+      <div style="padding:10px;background:var(--bg-main);border-radius:var(--radius-sm);margin-bottom:6px;font-size:12px">
+        <strong>${l.bookTitle||'未知'}</strong> · ${l.pages||0}页 · ${l.date||''}
+        ${l.note?'<br><span style="color:var(--text-secondary)">'+l.note.substring(0,60)+(l.note.length>60?'...':'')+'</span>':''}
+      </div>`).join('');
+  }
+
+  // Stats
+  const now=new Date();
+  const monthLogs=logs.filter(l=>{
+    const d=new Date(l.date);
+    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  });
+  const totalPages=monthLogs.reduce((s,l)=>s+(parseInt(l.pages)||0),0);
+  const finishedThisMonth=books.filter(b=>b.finishedMonth===`${now.getFullYear()}-${now.getMonth()+1}`).length;
+  document.getElementById('monthPages').textContent=totalPages+' 页';
+  document.getElementById('monthBooksFinished').textContent=finishedThisMonth+' 本';
+
+  // Streak
+  const streak=DB.get('reading_streak',0);
+  document.getElementById('readingStreak').textContent=`连续 ${streak} 天`;
+}
+
+function openAddBookModal(){document.getElementById('addBookModal').classList.add('show')}
+
+function addNewBook(){
+  const title=document.getElementById('newBookTitle').value.trim();
+  const author=document.getElementById('newBookAuthor').value.trim();
+  const pages=parseInt(document.getElementById('newBookPages').value)||0;
+  if(!title)return alert('请输入书名');
+  const books=DB.get('books',[]);
+  books.push({id:Date.now(),title,author,totalPages:pages,readPages:0,finished:false});
+  DB.set('books',books);
+  document.getElementById('newBookTitle').value='';
+  document.getElementById('newBookAuthor').value='';
+  document.getElementById('newBookPages').value='';
+  closeModal('addBookModal');
+  renderReading();
+}
+
+function logReadingProgress(){
+  const bookId=document.getElementById('readingBookSelect').value;
+  const pages=document.getElementById('readingPages').value;
+  if(!bookId||!pages)return alert('请选择书籍并填写页数');
+  const books=DB.get('books',[]);
+  const book=books.find(b=>b.id==bookId);
+  if(book){
+    book.readPages=(book.readPages||0)+parseInt(pages);
+    if(book.readPages>=book.totalPages){
+      book.finished=true;
+      book.finishedMonth=`${new Date().getFullYear()}-${new Date().getMonth()+1}`;
+    }
+    DB.set('books',books);
+  }
+  document.getElementById('readingPages').value='';
+  alert(`✅ 已记录 ${pages} 页`);
+  renderReading();
+}
+
+function submitReadingLog(){
+  const bookId=document.getElementById('readingBookSelect').value;
+  const pages=document.getElementById('readingPages').value;
+  const note=document.getElementById('readingNote').value.trim();
+  if(!bookId&&!pages&&!note)return alert('请至少填写一项');
+  const books=DB.get('books',[]);
+  const book=books.find(b=>b.id==bookId);
+  const logs=DB.get('reading_logs',[]);
+  logs.push({
+    id:Date.now(),
+    bookId,
+    bookTitle:book?.title||'自由阅读',
+    pages:pages||0,
+    note,
+    date:new Date().toLocaleDateString('zh-CN')
+  });
+  DB.set('reading_logs',logs);
+
+  // Update streak
+  let streak=DB.get('reading_streak',0)+1;
+  DB.set('reading_streak',streak);
+
+  // Update book pages
+  if(bookId&&pages){
+    book.readPages=(book.readPages||0)+parseInt(pages);
+    if(book.totalPages&&book.readPages>=book.totalPages){
+      book.finished=true;
+      book.finishedMonth=`${new Date().getFullYear()}-${new Date().getMonth()+1}`;
+    }
+    DB.set('books',books);
+  }
+
+  document.getElementById('readingPages').value='';
+  document.getElementById('readingNote').value='';
+  alert('📚 阅读记录已提交！');
+  renderReading();
+}
+
+// ==================== Weekly Review ====================
+function renderReview(){
+  const now=new Date();
+  const weekStart=new Date(now);
+  weekStart.setDate(now.getDate()-now.getDay()+1);
+  const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
+  document.getElementById('weekLabel').textContent=`${weekStart.getMonth()+1}/${weekStart.getDate()} - ${weekEnd.getMonth()+1}/${weekEnd.getDate()}`;
+
+  // Calculate stats from actual data
+  const tasks=DB.get('tasks',[]);
+  const doneTasks=tasks.filter(t=>t.done).length;
+  const planRate=tasks.length>0?Math.round(doneTasks/tasks.length*100):0;
+  document.getElementById('weekPlanRate').textContent=planRate+'%';
+  document.getElementById('weekPlanBar').style.width=planRate+'%';
+
+  const englishStreak=DB.get('english_streak',1);
+  document.getElementById('weekEnglishDays').textContent=`${Math.min(englishStreak,7)} / 7`;
+  document.getElementById('weekEnglishBar').style.width=Math.min(englishStreak/7*100,100)+'%';
+
+  const xhsNotes=DB.get('xhs_notes',[]);
+  document.getElementById('weekXhsCount').textContent=xhsNotes.length+' 篇';
+  document.getElementById('weekWechatCount').textContent='0 篇';
+
+  // Load saved review
+  const key=`${now.getFullYear()}-W${getWeekNumber(now)}`;
+  const saved=DB.get('weekly_reviews',{})[key];
+  if(saved){
+    document.getElementById('weekHighlights').value=saved.highlights||'';
+    document.getElementById('weekImprovements').value=saved.improvements||'';
+    document.getElementById('weeklyJournal').value=saved.journal||'';
+  }
+}
+
+function getWeekNumber(d){
+  const firstDay=new Date(d.getFullYear(),0,1);
+  return Math.ceil((((d-firstDay)/86400000)+firstDay.getDay()+1)/7);
+}
+
+function saveWeeklyReview(){
+  const now=new Date();
+  const key=`${now.getFullYear()}-W${getWeekNumber(now)}`;
+  const reviews=DB.get('weekly_reviews',{});
+  reviews[key]={
+    highlights:document.getElementById('weekHighlights').value,
+    improvements:document.getElementById('weekImprovements').value,
+    journal:document.getElementById('weeklyJournal').value,
+    savedAt:new Date().toLocaleString('zh-CN')
+  };
+  DB.set('weekly_reviews',reviews);
+  alert('💾 本周复盘已保存！');
+}
+
+// ==================== Settings ====================
+function renderSettings(){
+  const s=DB.get('settings',{});
+  document.getElementById('settingNickname').value=s.nickname||'';
+  document.getElementById('settingGoal').value=s.goal||'55岁提前退休';
+}
+
+function toggleSwitch(el){el.classList.toggle('on')}
+
+// Save settings on change
+document.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{
+    const nn=document.getElementById('settingNickname');
+    const ng=document.getElementById('settingGoal');
+    if(nn)nn.onchange=function(){const s=DB.get('settings',{});s.nickname=this.value;DB.set('settings',s)};
+    if(ng)ng.onchange=function(){const s=DB.get('settings',{});s.goal=this.value;DB.set('settings',s)};
+  },100);
+});
+
+// ==================== Data Management ====================
+function exportData(){
+  const data={};
+  const keys=['tasks','xhs_notes','english_history','english_streak','english_last_date','books','reading_logs','reading_streak','food_records','weights','weekly_reviews','settings','checkins','meals'];
+  keys.forEach(k=>data[k]=DB.get(k));
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`熊熊工作台备份_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+}
+
+function importDataPrompt(){document.getElementById('importFileInput').click()}
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      Object.keys(data).forEach(k=>DB.set(k,data[k]));
+      alert('✅ 数据导入成功！');
+      location.reload();
+    }catch(err){alert('导入失败：文件格式错误')}
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData(){
+  if(!confirm('⚠️ 确定要清空所有数据吗？此操作不可恢复！'))return;
+  if(!confirm('再次确认：真的要全部删除吗？'))return;
+  localStorage.clear();
+  alert('所有数据已清空');
+  location.reload();
+}
+
+// ==================== FAB ====================
+function handleFabClick(){
+  const actions={
+    'plan':()=>openAddTaskModal(),
+    'xhs':()=>addXhsNote(),
+    'english':()=>document.getElementById('englishFileInput').click(),
+    'diet':()=>addMealItem(),
+    'reading':()=>openAddBookModal()
+  };
+  if(actions[currentPage])actions[currentPage]();
+  else alert('当前页面暂无快捷操作');
+}
+
+// ==================== Init ====================
+document.addEventListener('DOMContentLoaded',()=>{
+  initData();
+  renderNav();
+  renderCalendar();
+  // Load saved notes
+  document.getElementById('wechatNotes').value=DB.get('wechat_notes_content')||'';
+  document.getElementById('newsNotes').value=DB.get('news_notes_content')||'';
+  document.getElementById('englishNotes').value=DB.get('english_notes_content')||'';
+  
+  // Auto-save notes
+  ['wechatNotes','newsNotes','englishNotes'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.onblur=function(){DB.set(id+'_content',this.value)};
+  });
+});
+</script>
+</body>
+</html>
