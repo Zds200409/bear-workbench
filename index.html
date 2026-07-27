@@ -377,7 +377,7 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           <input class="input" id="wechatNiche" placeholder="如：个人成长 / 理财 / 职场 / 育儿..." style="font-size:13px" onchange="DB.set('wechat_niche',this.value.trim())">
         </div>
         <div class="btn-group">
-          <button class="btn btn-primary btn-sm" onclick="generateWechatContent()">✨ 立即生成</button>
+          <button class="btn btn-primary btn-sm" id="genWechatBtn" onclick="generateWechatContent()">✨ 立即生成</button>
           <button class="btn btn-outline btn-sm" onclick="saveWechatDraft()">💾 存入草稿</button>
           <button class="btn btn-outline btn-sm" onclick="copyWechatContent()">📋 复制</button>
         </div>
@@ -942,6 +942,36 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           </div>
           <div class="toggle-switch" id="readingReminderToggle" onclick="toggleSwitch(this)"></div>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🤖</span> AI 生成设置</div>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);line-height:1.7;margin-bottom:12px">
+          接入真实大模型，让「公众号内容生成」输出真·原创长文（非模板）。<br>
+          Key 仅保存在你本机浏览器，<b>不会</b>写入代码或上传到任何服务器。
+        </p>
+        <div class="input-group" style="margin-bottom:12px">
+          <label class="input-label">模型服务商</label>
+          <select class="input" id="aiProvider" onchange="onAiProviderChange()">
+            <option value="deepseek">DeepSeek（推荐·便宜·中文强）</option>
+            <option value="kimi">Kimi（Moonshot）</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin-bottom:12px">
+          <label class="input-label">API Key <span style="color:#e74c3c">（私钥，仅存本机）</span></label>
+          <input class="input" id="aiApiKey" type="password" placeholder="粘贴你的 API Key，如 sk-..." style="font-size:13px">
+        </div>
+        <div class="input-group" style="margin-bottom:14px">
+          <label class="input-label">模型</label>
+          <input class="input" id="aiModel" placeholder="deepseek-chat" style="font-size:13px">
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary btn-sm" onclick="saveAiConfig()">💾 保存配置</button>
+          <button class="btn btn-outline btn-sm" onclick="testAiConfig()">🔌 测试连接</button>
+        </div>
+        <p id="aiConfigStatus" style="font-size:12px;margin-top:10px;color:var(--text-secondary)"></p>
       </div>
 
       <div class="card">
@@ -1565,20 +1595,114 @@ function copyXhsNote(i){
 }
 
 // ==================== WeChat Auto Publish ====================
-function generateWechatContent(){
+// ==================== AI 生成（浏览器直连真实大模型） ====================
+function getAiConfig(){
+  return DB.get('ai_config',{provider:'deepseek',apiKey:'',model:'deepseek-chat'});
+}
+function onAiProviderChange(){
+  const p=document.getElementById('aiProvider').value;
+  const m=document.getElementById('aiModel');
+  m.value=(p==='kimi')?'moonshot-v1-8k':'deepseek-chat';
+}
+function setAiStatus(msg,color){
+  const el=document.getElementById('aiConfigStatus');
+  if(el){el.textContent=msg;el.style.color=color||'var(--text-secondary)';}
+}
+function saveAiConfig(){
+  const p=document.getElementById('aiProvider').value;
+  const cfg={
+    provider:p,
+    apiKey:document.getElementById('aiApiKey').value.trim(),
+    model:document.getElementById('aiModel').value.trim()||(p==='kimi'?'moonshot-v1-8k':'deepseek-chat')
+  };
+  DB.set('ai_config',cfg);
+  const name=p==='kimi'?'Kimi':'DeepSeek';
+  setAiStatus('✅ 已保存（'+name+'）。去「公众号自动发布」点「✨ 立即生成」试试真实 AI 成文。','#2e7d32');
+}
+async function testAiConfig(){
+  const cfg=getAiConfig();
+  if(!cfg.apiKey){setAiStatus('⚠️ 先填写 API Key 再测试。','#e67e22');return;}
+  setAiStatus('⏳ 正在测试连接...','var(--text-secondary)');
+  try{
+    const txt=await callLLM('用一句话自我介绍：你是一个AI助手。');
+    setAiStatus('✅ 连接成功！模型返回：'+txt.slice(0,28),'#2e7d32');
+  }catch(e){
+    setAiStatus('❌ 连接失败：'+e.message,'#e74c3c');
+  }
+}
+// 通用 LLM 调用：浏览器直连，需接口支持 CORS（DeepSeek / Kimi 已验证）
+async function callLLM(userPrompt, systemPrompt){
+  const cfg=getAiConfig();
+  if(!cfg.apiKey)throw new Error('未配置 API Key（请在「设置 → AI 生成设置」中填写）');
+  const base=(cfg.provider==='kimi')
+    ?'https://api.moonshot.cn/v1/chat/completions'
+    :'https://api.deepseek.com/v1/chat/completions';
+  const resp=await fetch(base,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.apiKey},
+    body:JSON.stringify({
+      model:cfg.model,
+      messages:[
+        {role:'system',content:systemPrompt||'你是一个有帮助的中文内容创作助手。'},
+        {role:'user',content:userPrompt}
+      ],
+      temperature:0.8,
+      max_tokens:2000
+    })
+  });
+  if(!resp.ok){
+    let msg='HTTP '+resp.status;
+    try{const j=await resp.json();if(j.error&&j.error.message)msg=j.error.message;}catch(e){}
+    throw new Error(msg);
+  }
+  const j=await resp.json();
+  return (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'';
+}
+
+async function generateWechatContent(){
   const nicheInput=document.getElementById('wechatNiche');
   let niche=(nicheInput&&nicheInput.value.trim())||DB.get('wechat_niche','')||'';
   if(niche)DB.set('wechat_niche',niche);
-  const topic=currentHotNews[0]?.title||currentHotNews[0]?.word||'';
+  const topic=currentHotNews[0]&&(currentHotNews[0].title||currentHotNews[0].word)||'';
   if(!topic){
     alert('⚠️ 还没有获取到今日热点。\n请先到「每日热点新闻」点击🔄刷新，等出现真实热榜后，再来生成公众号内容。');
     return;
   }
   const topics=currentHotNews.slice(0,5).map(n=>n.title||n.word).filter(Boolean);
+  const draftEl=document.getElementById('wechatDraft');
+  const btn=document.getElementById('genWechatBtn');
+  const cfg=getAiConfig();
+
+  if(cfg.apiKey){
+    // 真实 AI 生成
+    if(btn){btn.disabled=true;btn.textContent='⏳ AI 生成中...';}
+    draftEl.value='⏳ 正在调用 '+ (cfg.provider==='kimi'?'Kimi':'DeepSeek') +' 生成中，请稍候...';
+    try{
+      const d=new Date();
+      const today=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric'});
+      const week=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+      const sys='你是一位擅长「'+niche+'」领域的公众号爆款写手，文风口语化、像真人写的，有观点、有个人经历感，杜绝 AI 腔和说教。';
+      const user='今天是'+today+'（'+week+'）。下面是今日真实热榜 Top'+topics.length+'：\n'+topics.map((t,i)=>(i+1)+'. '+t).join('\n')+
+        '\n\n请基于其中最具话题度的事件，写一篇可直接发布的公众号文章草稿，要求：\n'+
+        '1. 给出 3 个吸睛标题候选\n2. 一段导语（120字内，制造共鸣或悬念）\n'+
+        '3. 正文 3 个小节，每节有小标题 + 约200字干货，结合「'+niche+'」视角，有个人化表达\n'+
+        '4. 1 句金句\n5. 结尾引导读者点「在看」+ 评论互动\n6. 末尾附 1 个下篇选题储备\n直接输出成稿，不要任何解释。';
+      const draft=await callLLM(user,sys);
+      draftEl.value=draft;
+      DB.set('wechat_draft',draft);
+      if(btn){btn.disabled=false;btn.textContent='✨ 立即生成';}
+      return;
+    }catch(e){
+      if(btn){btn.disabled=false;btn.textContent='✨ 立即生成';}
+      draftEl.value='';
+      alert('⚠️ 真实 AI 生成失败：'+e.message+'\n\n已自动改用本地模板生成（仍可发布，但非 AI 原创长文）。');
+      // 继续走下方模板兜底
+    }
+  }
+  // 模板兜底（无 key 或 AI 失败）
   const draft=buildWechatArticle(niche||'个人成长',topic,topics);
-  document.getElementById('wechatDraft').value=draft;
+  draftEl.value=draft;
   DB.set('wechat_draft',draft);
-  alert('✅ 已基于今日热点「'+topic+'」生成公众号草稿，可编辑后复制发布。');
 }
 
 // 基于赛道 + 真实热点，生成结构化公众号文章草稿
@@ -2323,6 +2447,13 @@ function renderSettings(){
   const s=DB.get('settings',{});
   document.getElementById('settingNickname').value=s.nickname||'';
   document.getElementById('settingGoal').value=s.goal||'55岁提前退休';
+  const cfg=getAiConfig();
+  const ap=document.getElementById('aiProvider');
+  const ak=document.getElementById('aiApiKey');
+  const am=document.getElementById('aiModel');
+  if(ap)ap.value=cfg.provider||'deepseek';
+  if(ak)ak.value=cfg.apiKey||'';
+  if(am)am.value=cfg.model||(cfg.provider==='kimi'?'moonshot-v1-8k':'deepseek-chat');
 }
 
 function toggleSwitch(el){el.classList.toggle('on')}
@@ -2339,7 +2470,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ==================== Data Management ====================
 function exportData(){
   const data={};
-  const keys=['tasks','task_done_dates','xhs_notes','xhs_material','xhs_product','english_history','english_streak','english_last_date','books','reading_logs','reading_streak','food_records','weights','weekly_reviews','settings','checkins','meals','cached_news','cached_news_date','wellness_checkins','ai_notes'];
+  const keys=['tasks','task_done_dates','xhs_notes','xhs_material','xhs_product','english_history','english_streak','english_last_date','books','reading_logs','reading_streak','food_records','weights','weekly_reviews','settings','checkins','meals','cached_news','cached_news_date','wellness_checkins','ai_notes','ai_config'];
   keys.forEach(k=>data[k]=DB.get(k));
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
