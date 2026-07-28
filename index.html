@@ -1186,20 +1186,21 @@ const DB = {
 
 // ==================== Cloud Sync (CloudBase) ====================
 let _cloudApp=null, _cloudLoggedIn=false, _cloudTimer=null;
-// CloudBase Web SDK CDN 源（按优先级尝试）
+// CloudBase Web SDK CDN 源（国内优先）
 const _CLOUD_SDK_URLS=[
-  'https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@latest/dist/cloudbase.full.js',
-  'https://unpkg.com/@cloudbase/js-sdk@latest/dist/cloudbase.full.js'
+  'https://cdn.bootcdn.net/ajax/libs/tcb-js-sdk/2.14.0/tcb.min.js',
+  'https://lib.baomitu.com/tcb-js-sdk/2.14.0/tcb.min.js',
+  'https://npmmirror.com/cdnjs/ajax/libs/tcb-js-sdk/2.14.0/tcb.min.js'
 ];
 function _loadCloudSDK(){
-  if(window.cloud) return Promise.resolve(true);
+  if(window.tcb||window.cloud) return Promise.resolve(true);
   let idx=0;
   return new Promise((res,rej)=>{
     function tryNext(){
       if(idx>=_CLOUD_SDK_URLS.length){rej(new Error('CloudBase SDK 所有CDN源均加载失败，请检查网络'));return;}
       const s=document.createElement('script');
       s.src=_CLOUD_SDK_URLS[idx++];
-      s.onload=()=>res(true);
+      s.onload=()=>{if(!window.cloud)window.cloud=window.tcb;res(true);};
       s.onerror=()=>tryNext();
       document.head.appendChild(s);
     }
@@ -1213,7 +1214,8 @@ async function cloudLogin(){
   if(st)st.textContent='连接中...';
   try{
     await _loadCloudSDK();
-    if(!_cloudApp) _cloudApp=window.cloud.init({env});
+    const Cloud=window.cloud||window.tcb;
+    if(!_cloudApp) _cloudApp=Cloud.init({env});
     const auth=_cloudApp.auth({persistent:true});
     if(!_cloudLoggedIn){ await auth.signInAnonymously(); _cloudLoggedIn=true; }
     DB.set('cloud_connected',true);
