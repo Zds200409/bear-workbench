@@ -1950,7 +1950,7 @@ async function publishToWechat(){
     if(j.ok){
       alert('✅ 已提交发布！\n发布ID：'+j.publish_id+'\n公众号后台「发表记录」可查看，微信通常几分钟内审核生效。');
     }else{
-      alert('❌ 发布失败：'+j.error);
+      alert('❌ 发布失败：'+JSON.stringify(j));
     }
   }catch(err){
     if(btn){btn.disabled=false;btn.textContent='🚀 推送到公众号';}
