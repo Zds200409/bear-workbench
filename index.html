@@ -1109,13 +1109,13 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           <label class="input-label">CloudBase 环境 ID</label>
           <input class="input" id="cloudEnvId" placeholder="如：bear-workbench-7gxxxx" style="font-size:12px" onchange="DB.set('cloud_env_id',this.value.trim())">
         </div>
-        <div id="cloudStatus" style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">未连接。开通腾讯云 CloudBase 后填入「环境 ID」，即可在手机/电脑间同步所有数据（匿名登录，免注册）。</div>
+        <div id="cloudStatus" style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">未连接。开通腾讯云 CloudBase 后填入「环境 ID」，即可在手机/电脑间同步所有数据（匿名登录，免注册，零外部依赖）。</div>
         <div class="btn-group" style="flex-wrap:wrap">
           <button class="btn btn-primary btn-sm" onclick="cloudLogin()">🔗 连接并登录</button>
           <button class="btn btn-outline btn-sm" onclick="cloudUpload()">☁️ 上传到云</button>
           <button class="btn btn-outline btn-sm" onclick="cloudDownload()">⬇️ 从云下载</button>
         </div>
-        <div class="invest-note">数据存于你自己的 CloudBase 环境，仅你自己可见。需先在 CloudBase 控制台开启「匿名登录」，并创建一个名为 <b>wb_sync</b> 的数据库集合。</div>
+        <div class="invest-note">数据存于你自己的 CloudBase 环境，仅你自己可见。需先在 CloudBase 控制台开启「匿名登录」，并创建一个名为 <b>wb_sync</b> 的数据库集合。无需安装任何 SDK，纯 fetch 调用 REST API。</div>
       </div>
 
       <div class="card">
@@ -1184,65 +1184,62 @@ const DB = {
   remove(key){localStorage.removeItem('bear_workbench_'+key)}
 };
 
-// ==================== Cloud Sync (CloudBase) ====================
-let _cloudApp=null, _cloudLoggedIn=false, _cloudTimer=null;
-// CloudBase Web SDK CDN 源（国内优先，全局变量 cloudbase）
-const _CLOUD_SDK_URLS=[
-  'https://npmmirror.com/cdnjs/ajax/libs/cloudbase.js-sdk/2.14.0/cloudbase.full.js',
-  'https://cdn.staticfile.net/tcb-js-sdk/2.7.8/tcb.min.js'
-];
-function _loadCloudSDK(){
-  if(window.cloudbase||window.tcb) return Promise.resolve(true);
-  let idx=0;
-  return new Promise((res,rej)=>{
-    function tryNext(){
-      if(idx>=_CLOUD_SDK_URLS.length){rej(new Error('CloudBase SDK 所有CDN源均加载失败，请检查网络'));return;}
-      const s=document.createElement('script');
-      s.src=_CLOUD_SDK_URLS[idx++];
-      s.onload=()=>res(true);
-      s.onerror=()=>tryNext();
-      document.head.appendChild(s);
-    }
-    tryNext();
-  });
-}
+// ==================== Cloud Sync (CloudBase REST API — 零外部依赖) ====================
+let _cloudToken='', _cloudEnv='', _cloudLoggedIn=false, _cloudTimer=null;
+// CloudBase REST API 基地址（国内节点，浏览器直连）
+function _cloudApi(){return 'https://'+_cloudEnv+'.tcb.qcloud.la';}
 async function cloudLogin(){
   const env=DB.get('cloud_env_id','');
   if(!env){alert('⚠️ 请先在上方填写 CloudBase 环境 ID。');return;}
+  _cloudEnv=env;
   const st=document.getElementById('cloudStatus');
   if(st)st.textContent='连接中...';
   try{
-    await _loadCloudSDK();
-    const Cloud=window.cloudbase||window.tcb;
-    if(!Cloud) throw new Error('SDK未正确加载');
-    if(!_cloudApp) _cloudApp=Cloud.init({env});
-    const auth=_cloudApp.auth({persistent:true});
-    if(!_cloudLoggedIn){ await auth.signInAnonymously(); _cloudLoggedIn=true; }
+    // 匿名登录
+    const r=await fetch(_cloudApi()+'/web',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'anonymousLogin',env})
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    if(j.code!==0) throw new Error(j.message||JSON.stringify(j));
+    _cloudToken=j.data.access_token||j.data.token||'';
+    _cloudLoggedIn=true;
     DB.set('cloud_connected',true);
+    DB.set('cloud_token',_cloudToken);
     if(st)st.innerHTML='✅ 已连接（匿名）· 环境 '+env;
     await cloudDownload(false);
   }catch(e){ if(st)st.textContent='❌ 连接失败：'+e.message; }
 }
+async function _cloudDb(action,body){
+  const h={'Content-Type':'application/json','X-CloudBase-EnvId':_cloudEnv};
+  if(_cloudToken)h['Authorization']='Bearer '+_cloudToken;
+  const r=await fetch(_cloudApi()+'/database',{method:'POST',headers:h,body:JSON.stringify({...action,...body})});
+  return r.json();
+}
 async function cloudUpload(showAlert=true){
-  if(!_cloudApp||!_cloudLoggedIn){if(showAlert)alert('请先点「连接并登录」。');return;}
+  if(!_cloudLoggedIn){if(showAlert)alert('请先点「连接并登录」。');return;}
   try{
-    const db=_cloudApp.database();
-    const col=db.collection('wb_sync');
     const keys=[];
     for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('bear_workbench_')===0)keys.push(k);}
-    for(const k of keys){ await col.doc(k).set({k:k, v:localStorage.getItem(k), updated:Date.now()}); }
+    let ok=0;
+    for(const k of keys){
+      const j=await _cloudDb({action:'database.addDocument',collectionName:'wb_sync'},
+        {_id:k,data:{k,k,v:localStorage.getItem(k),updated:Date.now()}});
+      if(j.code===0||j.requestId)ok++;
+    }
     const st=document.getElementById('cloudStatus');
-    if(st)st.innerHTML='✅ 已上传 '+keys.length+' 项 · '+new Date().toLocaleTimeString('zh-CN');
-    if(showAlert)alert('✅ 已上传 '+keys.length+' 项到云端。');
+    if(st)st.innerHTML='✅ 已上传 '+ok+'/'+keys.length+' 项 · '+new Date().toLocaleTimeString('zh-CN');
+    if(showAlert)alert('✅ 已上传 '+ok+' 项到云端。');
   }catch(e){if(showAlert)alert('❌ 上传失败：'+e.message);}
 }
 async function cloudDownload(showAlert=true){
-  if(!_cloudApp||!_cloudLoggedIn){if(showAlert)alert('请先点「连接并登录」。');return;}
+  if(!_cloudLoggedIn){if(showAlert)alert('请先点「连接并登录」。');return;}
   try{
-    const db=_cloudApp.database();
-    const res=await db.collection('wb_sync').limit(1000).get();
+    const j=await _cloudDb({action:'database.getDocuments',collectionName:'wb_sync',limit:1000},{});
     let n=0;
-    (res.data||[]).forEach(d=>{if(d&&d.k){localStorage.setItem(d.k,d.v);n++;}});
+    (j.data||[]).forEach(d=>{const doc=d.data||d;if(doc&&doc.k){localStorage.setItem(doc.k,doc.v);n++;}});
     const st=document.getElementById('cloudStatus');
     if(st)st.innerHTML='✅ 已从云下载 '+n+' 项 · '+new Date().toLocaleTimeString('zh-CN');
     if(showAlert)alert('✅ 已从云下载 '+n+' 项，刷新页面生效。');
@@ -1251,7 +1248,7 @@ async function cloudDownload(showAlert=true){
 // 本地写入后自动（防抖）上传到云
 (function(){
   const _origSet=DB.set.bind(DB);
-  DB.set=function(k,v){_origSet(k,v);if(_cloudLoggedIn&&_cloudApp){clearTimeout(_cloudTimer);_cloudTimer=setTimeout(()=>cloudUpload(false),1500);}};
+  DB.set=function(k,v){_origSet(k,v);if(_cloudLoggedIn){clearTimeout(_cloudTimer);_cloudTimer=setTimeout(()=>cloudUpload(false),1500);}};
 })();
 window.addEventListener('load',()=>{
   const ce=DB.get('cloud_env_id','');
