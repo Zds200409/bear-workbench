@@ -1186,14 +1186,24 @@ const DB = {
 
 // ==================== Cloud Sync (CloudBase) ====================
 let _cloudApp=null, _cloudLoggedIn=false, _cloudTimer=null;
+// CloudBase Web SDK CDN 源（按优先级尝试）
+const _CLOUD_SDK_URLS=[
+  'https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@latest/dist/cloudbase.full.js',
+  'https://unpkg.com/@cloudbase/js-sdk@latest/dist/cloudbase.full.js'
+];
 function _loadCloudSDK(){
   if(window.cloud) return Promise.resolve(true);
+  let idx=0;
   return new Promise((res,rej)=>{
-    const s=document.createElement('script');
-    s.src='https://tcb.cloud.tencent.com/cloudbase-js-sdk/index.js';
-    s.onload=()=>res(true);
-    s.onerror=()=>rej(new Error('CloudBase SDK 加载失败（请检查网络能否访问 tcb.cloud.tencent.com）'));
-    document.head.appendChild(s);
+    function tryNext(){
+      if(idx>=_CLOUD_SDK_URLS.length){rej(new Error('CloudBase SDK 所有CDN源均加载失败，请检查网络'));return;}
+      const s=document.createElement('script');
+      s.src=_CLOUD_SDK_URLS[idx++];
+      s.onload=()=>res(true);
+      s.onerror=()=>tryNext();
+      document.head.appendChild(s);
+    }
+    tryNext();
   });
 }
 async function cloudLogin(){
