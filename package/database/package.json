@@ -1,0 +1,36 @@
+{
+  "name": "@cloudbase/database",
+  "version": "0.12.1",
+  "description": "database for (node.)js sdk ",
+  "main": "dist/commonjs/index.js",
+  "module": "dist/esm/index.js",
+  "publishConfig": {
+    "tag": "next"
+  },
+  "scripts": {
+    "eslint": "eslint \"./**/*.ts\"",
+    "eslint-fix": "eslint --fix \"./**/*.ts\"",
+    "test": "jest",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json",
+    "prepublishOnly": "npm run build"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "26.0.24",
+    "@types/node": "14.14.31",
+    "eslint": "^5.15.3",
+    "eslint-config-prettier": "^4.1.0",
+    "eslint-plugin-prettier": "^3.0.1",
+    "eslint-plugin-typescript": "^0.14.0",
+    "jest": "26.6.3",
+    "ts-jest": "26.5.6",
+    "typescript": "^4.1.0",
+    "typescript-eslint-parser": "^22.0.0"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "bson": "^7.1.1"
+  },
+  "packageManager": "yarn@1.22.22"
+}

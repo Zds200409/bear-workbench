@@ -1,19 +1,24 @@
 /**
- * 熊熊工作台 · 公众号发布（腾讯云 SCF 版）
+ * 熊熊工作台 · 公众号发布 + 云同步（腾讯云 SCF 版）
  * 零依赖：仅用 Node 18 内置 fetch，无需 npm install
  *
  * 能力：
  *  1) 立即发布：前端 POST {mode:'now', title, author, digest, contentHtml, coverBase64}
- *     → 上传封面 → 写草稿箱 → 提交发布，返回 publish_id
+ *     → 上传封面 → 写草稿箱 → 返回 media_id（订阅号不自动发）
  *  2) 定时发布：前端 POST {mode:'schedule', time:'09:30', ...article}
- *     → 在微信草稿箱创建一篇标题带【定时·09:30】标记的草稿（不发布）
+ *     → 在微信草稿箱创建一篇标题带【定时·09:30】标记的草稿
  *  3) 定时触发：SCF 控制台建一个「每 15 分钟」的定时器调用本函数
  *     → 扫描草稿箱，找到标记且到点(<=当前时间)且今天未发的草稿，提交发布并删除该草稿
+ *  4) 云同步代理：mode='cloud_login'/'cloud_upload'/'cloud_download'
+ *     → 浏览器通过 SCF 代理访问 CloudBase 数据库（解决浏览器无法直连 tcb 域名的问题）
  *
- * 密钥：WECHAT_APPID / WECHAT_APPSECRET 配置在函数「环境变量」，不进代码/仓库
+ * 环境变量：
+ *   WECHAT_APPID / WECHAT_APPSECRET — 微信公众号密钥
+ *   CLOUDBASE_ENV_ID — CloudBase 环境 ID（用于云同步）
  */
 const APPID = process.env.WECHAT_APPID || '';
 const APPSECRET = process.env.WECHAT_APPSECRET || '';
+const CLOUDBASE_ENV = process.env.CLOUDBASE_ENV_ID || '';
 const API = 'https://api.weixin.qq.com/cgi-bin';
 
 let _token = '';
@@ -163,6 +168,59 @@ async function scheduleDraft(p) {
   return { ok: true, media_id, note: '草稿已入队，待 SCF 定时器到点自动发布' };
 }
 
+// ==================== CloudBase 云同步代理（SCF 内网访问） ====================
+let _cbToken = '';
+let _cbTokenExp = 0;
+
+async function cbApi(action, data) {
+  const url = `https://${CLOUDBASE_ENV}.tcb.qcloud.la/web`;
+  const body = { action, env: CLOUDBASE_ENV, data: data || {} };
+  if (_cbToken) body.access_token = _cbToken;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+async function cloudLogin() {
+  if (!CLOUDBASE_ENV) throw new Error('未配置 CLOUDBASE_ENV_ID 环境变量');
+  const j = await cbApi('anonymousLogin', {});
+  if (j.code !== 0) throw new Error(j.message || '匿名登录失败: ' + JSON.stringify(j));
+  _cbToken = j.data?.access_token || j.data?.token || '';
+  _cbTokenExp = Date.now() + 3600000; // 1h
+  return { ok: true, token: _cbToken };
+}
+
+async function cloudUpload(data) {
+  if (!_cbToken) await cloudLogin();
+  let ok = 0;
+  for (const [k, v] of Object.entries(data)) {
+    const j = await cbApi('database.addDocument', {
+      collectionName: 'wb_sync',
+      _id: k,
+      data: { k, v, updated: Date.now() }
+    });
+    if (j.code === 0 || j.requestId) ok++;
+  }
+  return { ok: true, uploaded: ok, total: Object.keys(data).length };
+}
+
+async function cloudDownload() {
+  if (!_cbToken) await cloudLogin();
+  const j = await cbApi('database.getDocuments', {
+    collectionName: 'wb_sync',
+    limit: 1000
+  });
+  const docs = {};
+  (j.data || []).forEach(d => {
+    const doc = d.data || d;
+    if (doc && doc.k) docs[doc.k] = doc.v;
+  });
+  return { ok: true, count: Object.keys(docs).length, data: docs };
+}
+
 function cors(body, status = 200) {
   return {
     statusCode: status,
@@ -228,6 +286,19 @@ exports.main_handler = async (event, context) => {
     if (body.mode === 'schedule') {
       const r = await scheduleDraft(body);
       return cors(r);
+    }
+    // ===== 云同步代理（通过 SCF 中转，解决浏览器无法直连 CloudBase 域名） =====
+    if (body.mode === 'cloud_login') {
+      try { return cors(await cloudLogin()); }
+      catch (e) { return cors({ ok: false, error: e.message }, 500); }
+    }
+    if (body.mode === 'cloud_upload') {
+      try { return cors(await cloudUpload(body.data || {})); }
+      catch (e) { return cors({ ok: false, error: e.message }, 500); }
+    }
+    if (body.mode === 'cloud_download') {
+      try { return cors(await cloudDownload()); }
+      catch (e) { return cors({ ok: false, error: e.message }, 500); }
     }
     // 默认：立即发布
     const r = await publishNow(body);

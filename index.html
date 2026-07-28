@@ -1109,13 +1109,13 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           <label class="input-label">CloudBase 环境 ID</label>
           <input class="input" id="cloudEnvId" placeholder="如：bear-workbench-7gxxxx" style="font-size:12px" onchange="DB.set('cloud_env_id',this.value.trim())">
         </div>
-        <div id="cloudStatus" style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">未连接。开通腾讯云 CloudBase 后填入「环境 ID」，即可在手机/电脑间同步所有数据（匿名登录，免注册，零外部依赖）。</div>
+        <div id="cloudStatus" style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">未连接。通过你已有的腾讯云 SCF 代理访问 CloudBase（浏览器不直连腾讯云域名，零外部依赖）。</div>
         <div class="btn-group" style="flex-wrap:wrap">
           <button class="btn btn-primary btn-sm" onclick="cloudLogin()">🔗 连接并登录</button>
           <button class="btn btn-outline btn-sm" onclick="cloudUpload()">☁️ 上传到云</button>
           <button class="btn btn-outline btn-sm" onclick="cloudDownload()">⬇️ 从云下载</button>
         </div>
-        <div class="invest-note">数据存于你自己的 CloudBase 环境，仅你自己可见。需先在 CloudBase 控制台开启「匿名登录」，并创建一个名为 <b>wb_sync</b> 的数据库集合。无需安装任何 SDK，纯 fetch 调用 REST API。</div>
+        <div class="invest-note">数据存于你自己的 CloudBase 环境，仅你自己可见。需先在 CloudBase 控制台开启「匿名登录」+ 创建集合 <b>wb_sync</b>；然后在 SCF 函数环境变量加 <b>CLOUDBASE_ENV_ID</b>（值同上）。浏览器通过 SCF 代理访问，不直连腾讯云。</div>
       </div>
 
       <div class="card">
@@ -1184,62 +1184,48 @@ const DB = {
   remove(key){localStorage.removeItem('bear_workbench_'+key)}
 };
 
-// ==================== Cloud Sync (CloudBase REST API — 零外部依赖) ====================
-let _cloudToken='', _cloudEnv='', _cloudLoggedIn=false, _cloudTimer=null;
-// CloudBase REST API 基地址（国内节点，浏览器直连）
-function _cloudApi(){return 'https://'+_cloudEnv+'.tcb.qcloud.la';}
+// ==================== Cloud Sync（通过 SCF 代理访问 CloudBase，零外部依赖） ====================
+let _cloudLoggedIn=false, _cloudTimer=null;
+async function _scfCloud(mode, data){
+  const url=getScfUrl();
+  if(!url) throw new Error('未配置 SCF URL');
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode,...data})});
+  return r.json();
+}
 async function cloudLogin(){
   const env=DB.get('cloud_env_id','');
-  if(!env){alert('⚠️ 请先在上方填写 CloudBase 环境 ID。');return;}
-  _cloudEnv=env;
+  if(!env){alert('⚠️ 请先在上方填写 CloudBase 环境 ID。\n（同时需在 SCF 环境变量加 CLOUDBASE_ENV_ID='+env+'）');return;}
+  // 同步到 SCF 所需的环境变量提示
+  DB.set('cloud_env_id',env);
   const st=document.getElementById('cloudStatus');
   if(st)st.textContent='连接中...';
   try{
-    // 匿名登录
-    const r=await fetch(_cloudApi()+'/web',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'anonymousLogin',env})
-    });
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const j=await r.json();
-    if(j.code!==0) throw new Error(j.message||JSON.stringify(j));
-    _cloudToken=j.data.access_token||j.data.token||'';
-    _cloudLoggedIn=true;
-    DB.set('cloud_connected',true);
-    DB.set('cloud_token',_cloudToken);
-    if(st)st.innerHTML='✅ 已连接（匿名）· 环境 '+env;
-    await cloudDownload(false);
+    const j=await _scfCloud('cloud_login',{});
+    if(j.ok){
+      _cloudLoggedIn=true;
+      DB.set('cloud_connected',true);
+      if(st)st.innerHTML='✅ 已连接（通过 SCF 代理）· 环境 '+env;
+      await cloudDownload(false);
+    }else{ throw new Error(j.error||'登录失败'); }
   }catch(e){ if(st)st.textContent='❌ 连接失败：'+e.message; }
-}
-async function _cloudDb(action,body){
-  const h={'Content-Type':'application/json','X-CloudBase-EnvId':_cloudEnv};
-  if(_cloudToken)h['Authorization']='Bearer '+_cloudToken;
-  const r=await fetch(_cloudApi()+'/database',{method:'POST',headers:h,body:JSON.stringify({...action,...body})});
-  return r.json();
 }
 async function cloudUpload(showAlert=true){
   if(!_cloudLoggedIn){if(showAlert)alert('请先点「连接并登录」。');return;}
   try{
-    const keys=[];
-    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('bear_workbench_')===0)keys.push(k);}
-    let ok=0;
-    for(const k of keys){
-      const j=await _cloudDb({action:'database.addDocument',collectionName:'wb_sync'},
-        {_id:k,data:{k,k,v:localStorage.getItem(k),updated:Date.now()}});
-      if(j.code===0||j.requestId)ok++;
-    }
+    const data={};
+    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('bear_workbench_')===0)data[k]=localStorage.getItem(k);}
+    const j=await _scfCloud('cloud_upload',{data});
     const st=document.getElementById('cloudStatus');
-    if(st)st.innerHTML='✅ 已上传 '+ok+'/'+keys.length+' 项 · '+new Date().toLocaleTimeString('zh-CN');
-    if(showAlert)alert('✅ 已上传 '+ok+' 项到云端。');
+    if(st)st.innerHTML='✅ 已上传 '+j.uploaded+'/'+j.total+' 项 · '+new Date().toLocaleTimeString('zh-CN');
+    if(showAlert)alert('✅ 已上传 '+j.uploaded+' 项到云端。');
   }catch(e){if(showAlert)alert('❌ 上传失败：'+e.message);}
 }
 async function cloudDownload(showAlert=true){
   if(!_cloudLoggedIn){if(showAlert)alert('请先点「连接并登录」。');return;}
   try{
-    const j=await _cloudDb({action:'database.getDocuments',collectionName:'wb_sync',limit:1000},{});
+    const j=await _scfCloud('cloud_download',{});
     let n=0;
-    (j.data||[]).forEach(d=>{const doc=d.data||d;if(doc&&doc.k){localStorage.setItem(doc.k,doc.v);n++;}});
+    Object.entries(j.data||{}).forEach(([k,v])=>{localStorage.setItem(k,v);n++;});
     const st=document.getElementById('cloudStatus');
     if(st)st.innerHTML='✅ 已从云下载 '+n+' 项 · '+new Date().toLocaleTimeString('zh-CN');
     if(showAlert)alert('✅ 已从云下载 '+n+' 项，刷新页面生效。');

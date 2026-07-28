@@ -1,0 +1,26 @@
+{
+  "name": "@cloudbase/utilities",
+  "version": "3.6.6",
+  "description": "cloudbase javascript sdk utilities",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "miniprogram": "dist/miniprogram",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TencentCloudBase/cloudbase-js-sdk"
+  },
+  "keywords": [
+    "tcb",
+    "cloudbase",
+    "serverless"
+  ],
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@cloudbase/adapter-interface": "^0.7.1",
+    "@cloudbase/types": "3.6.6",
+    "jwt-decode": "^3.1.2"
+  },
+  "gitHead": "859557576897d4778857c12fb8d7fe8ca1f3a052"
+}
