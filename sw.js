@@ -1,6 +1,6 @@
 // 熊熊工作台 Service Worker —— 缓存应用外壳，重复打开秒开 + 弱网/离线可用
 // v2：页面 HTML 改为「网络优先」，保证每次打开都拿到最新版；静态资源仍缓存加速
-const CACHE = 'bear-workbench-v2';
+const CACHE = 'bear-workbench-v3';
 const ASSETS = ['./', './index.html', './icon.svg', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {

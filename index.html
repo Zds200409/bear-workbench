@@ -1209,15 +1209,17 @@ async function ghLogin(){
   if(st)st.textContent='连接中...';
   try{
     const content=JSON.stringify(_collectLocal());
+    console.log('[ghLogin] 发送 gh_gist_create, 数据大小:', content.length);
     let j=await _scfCloud('gh_gist_create',{token,content});
+    console.log('[ghLogin] SCF 返回:', JSON.stringify(j).slice(0,500));
     if(j.ok){
       DB.set('gh_gist_id',j.gist_id);
       const gidEl=document.getElementById('ghGistId'); if(gidEl)gidEl.value=j.gist_id;
       _ghConnected=true; DB.set('cloud_connected',true);
       if(st)st.innerHTML='✅ 已创建并连接 Gist<br>'+j.url;
       await ghDownload(false);
-    }else{ throw new Error(j.error||'创建失败'); }
-  }catch(e){ if(st)st.textContent='❌ 连接失败：'+e.message; }
+    }else{ throw new Error(j.error||'创建失败: '+JSON.stringify(j).slice(0,300)); }
+  }catch(e){ console.error('[ghLogin] 错误:', e); if(st)st.textContent='❌ 连接失败：'+e.message; }
 }
 async function ghUpload(showAlert=true){
   const token=DB.get('gh_token','').trim();
