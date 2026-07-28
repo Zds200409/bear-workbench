@@ -1832,6 +1832,7 @@ async function generateWechatContent(){
       const draft=await callLLM(user,sys);
       draftEl.value=draft;
       DB.set('wechat_draft',draft);
+      autoGenerateCover((draft.split('\n').find(l=>l.trim())||'今日热点').slice(0,30));
       if(btn){btn.disabled=false;btn.textContent='✨ 立即生成';}
       return;
     }catch(e){
@@ -1845,6 +1846,7 @@ async function generateWechatContent(){
   const draft=buildWechatArticle(niche||'个人成长',topic,topics);
   draftEl.value=draft;
   DB.set('wechat_draft',draft);
+  autoGenerateCover((draft.split('\n').find(l=>l.trim())||'今日热点').slice(0,30));
 }
 
 // ==================== 公众号真实发布（调腾讯云 SCF 函数） ====================
@@ -1881,6 +1883,44 @@ function handleCoverUpload(e){
   };
   reader.readAsDataURL(file);
 }
+// 自动生成财经风封面（canvas 绘制，无需手动上传），返回 base64
+function autoGenerateCover(title){
+  try{
+    const w=900,h=383;
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    const ctx=c.getContext('2d');
+    const g=ctx.createLinearGradient(0,0,w,h);
+    g.addColorStop(0,'#0f2027');g.addColorStop(0.5,'#203a43');g.addColorStop(1,'#2c5364');
+    ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+    ctx.beginPath();ctx.arc(w-110,80,130,0,Math.PI*2);ctx.fillStyle='rgba(255,215,0,0.10)';ctx.fill();
+    ctx.beginPath();ctx.arc(70,h-30,90,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fill();
+    ctx.fillStyle='#ffd700';ctx.font='bold 22px sans-serif';
+    ctx.fillText('🐻 熊熊工作台 · 每日热点',42,54);
+    ctx.fillStyle='#ffffff';ctx.font='bold 40px sans-serif';
+    const raw=((title||'今日热点').replace(/\n/g,' ').replace(/^\d+[.、)]\s*/,'').replace(/[#*【】]/g,'')).trim();
+    const lines=wrapText(ctx,raw.slice(0,30),w-84,40).slice(0,2);
+    let y=h/2-(lines.length-1)*24;
+    lines.forEach((ln,i)=>{ctx.fillText(ln,42,y+i*52);});
+    const d=new Date();
+    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='18px sans-serif';
+    ctx.fillText(d.toLocaleDateString('zh-CN',{month:'long',day:'numeric'})+'　'+['周日','周一','周二','周三','周四','周五','周六'][d.getDay()],42,h-30);
+    const data=c.toDataURL('image/png');
+    DB.set('wechat_cover',data);
+    const st=document.getElementById('wechatCoverStatus');
+    if(st){st.textContent='✅ 已自动生成封面（可在上方手动替换）';st.style.color='#2e7d32';}
+    return data;
+  }catch(e){return '';}
+}
+function wrapText(ctx,text,maxW){
+  const chars=text.split('');
+  const lines=[];let cur='';
+  for(const ch of chars){
+    if(ctx.measureText(cur+ch).width>maxW&&cur){lines.push(cur);cur=ch;}
+    else cur+=ch;
+  }
+  if(cur)lines.push(cur);
+  return lines.length?lines:[''];
+}
 function getScfUrl(){
   return (DB.get('wechat_scf_url','')||'').trim();
 }
@@ -1888,7 +1928,9 @@ async function publishToWechat(){
   const draftEl=document.getElementById('wechatDraft');
   const draft=(draftEl.value||'').trim();
   if(!draft){alert('还没有内容，先点「✨ 立即生成」。');return;}
-  const cover=DB.get('wechat_cover','');
+  const cover0=DB.get('wechat_cover','');
+  let cover=cover0;
+  if(!cover){ cover=autoGenerateCover(title)||''; }
   if(!cover){alert('⚠️ 发布到公众号必须上传封面图。\n请在上方「封面图」选择一张图片。');return;}
   const url=getScfUrl();
   if(!url){alert('⚠️ 还没填「公众号发布地址(SCF)」。\n请到 设置 → 自动发布设置，粘贴你的腾讯云 SCF 函数 URL。');return;}
@@ -3273,6 +3315,7 @@ async function generateFunnel(){
   const wd=document.getElementById('wechatDraft');
   if(wd)wd.value=wechatDraft;
   DB.set('wechat_draft',wechatDraft);
+  autoGenerateCover((wechatDraft.split('\n').find(l=>l.trim())||'今日热点').slice(0,30));
   DB.set('xhs_draft',xhsDraft);
   const log=DB.get('funnel_log',[]);
   log.unshift({date:todayKey(),wechatTitle:(wechatDraft.split('\n').find(l=>l.trim())||'公众号文章').slice(0,40),xhsTitle:(xhsDraft.split('\n').find(l=>l.trim())||'小红书文案').slice(0,40)});
