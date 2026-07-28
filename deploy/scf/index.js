@@ -20,6 +20,7 @@ const APPID = process.env.WECHAT_APPID || '';
 const APPSECRET = process.env.WECHAT_APPSECRET || '';
 const CLOUDBASE_ENV = process.env.CLOUDBASE_ENV_ID || '';
 const API = 'https://api.weixin.qq.com/cgi-bin';
+const GH_API = 'https://api.github.com';
 
 let _token = '';
 let _tokenExp = 0;
@@ -181,12 +182,32 @@ async function cbApi(action, data) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  return r.json();
+  const text = await r.text();
+  try { return JSON.parse(text); }
+  catch (e) {
+    throw new Error(`CloudBase API(${action}) 返回非JSON [HTTP ${r.status}]: ${text.slice(0, 500)}`);
+  }
 }
 
 async function cloudLogin() {
   if (!CLOUDBASE_ENV) throw new Error('未配置 CLOUDBASE_ENV_ID 环境变量');
-  const j = await cbApi('anonymousLogin', {});
+  let j;
+  try { j = await cbApi('anonymousLogin', {}); }
+  catch (e) {
+    // 尝试备用接口格式
+    try {
+      const url2 = `https://${CLOUDBASE_ENV}.tcb.qcloud.la/web`;
+      const r2 = await fetch(url2, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'auth.signInAnonymously', env: CLOUDBASE_ENV })
+      });
+      const t2 = await r2.text();
+      throw new Error(`主接口失败: ${e.message}; 备用接口返回 [HTTP ${r2.status}]: ${t2.slice(0, 500)}`);
+    } catch (e2) {
+      throw new Error(`CloudBase 匿名登录失败: ${e.message}`);
+    }
+  }
   if (j.code !== 0) throw new Error(j.message || '匿名登录失败: ' + JSON.stringify(j));
   _cbToken = j.data?.access_token || j.data?.token || '';
   _cbTokenExp = Date.now() + 3600000; // 1h
@@ -219,6 +240,44 @@ async function cloudDownload() {
     if (doc && doc.k) docs[doc.k] = doc.v;
   });
   return { ok: true, count: Object.keys(docs).length, data: docs };
+}
+
+// ==================== GitHub Gist 云同步代理（SCF 内网访问 api.github.com） ====================
+async function githubGistCreate(token, content) {
+  const r = await fetch(`${GH_API}/gists`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'User-Agent': 'bear-workbench' },
+    body: JSON.stringify({
+      description: 'Bear Workbench Cloud Sync (do not delete)',
+      public: false,
+      files: { 'data.json': { content } }
+    })
+  });
+  const text = await r.text();
+  if (!r.ok) throw new Error(`Gist创建失败 [HTTP ${r.status}]: ${text.slice(0, 300)}`);
+  const j = JSON.parse(text);
+  return { ok: true, gist_id: j.id, url: j.html_url };
+}
+async function githubGistUpdate(token, gistId, content) {
+  const r = await fetch(`${GH_API}/gists/${gistId}`, {
+    method: 'PATCH',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'User-Agent': 'bear-workbench' },
+    body: JSON.stringify({ files: { 'data.json': { content } } })
+  });
+  const text = await r.text();
+  if (!r.ok) throw new Error(`Gist更新失败 [HTTP ${r.status}]: ${text.slice(0, 300)}`);
+  return { ok: true };
+}
+async function githubGistGet(token, gistId) {
+  const r = await fetch(`${GH_API}/gists/${gistId}`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'User-Agent': 'bear-workbench' }
+  });
+  const text = await r.text();
+  if (!r.ok) throw new Error(`Gist读取失败 [HTTP ${r.status}]: ${text.slice(0, 300)}`);
+  const j = JSON.parse(text);
+  const content = j.files && j.files['data.json'] ? j.files['data.json'].content : '';
+  return { ok: true, content };
 }
 
 function cors(body, status = 200) {
@@ -298,6 +357,19 @@ exports.main_handler = async (event, context) => {
     }
     if (body.mode === 'cloud_download') {
       try { return cors(await cloudDownload()); }
+      catch (e) { return cors({ ok: false, error: e.message }, 500); }
+    }
+    // ===== GitHub Gist 云同步代理 =====
+    if (body.mode === 'gh_gist_create') {
+      try { return cors(await githubGistCreate(body.token, body.content || '')); }
+      catch (e) { return cors({ ok: false, error: e.message }, 500); }
+    }
+    if (body.mode === 'gh_gist_update') {
+      try { return cors(await githubGistUpdate(body.token, body.gist_id, body.content || '')); }
+      catch (e) { return cors({ ok: false, error: e.message }, 500); }
+    }
+    if (body.mode === 'gh_gist_get') {
+      try { return cors(await githubGistGet(body.token, body.gist_id)); }
       catch (e) { return cors({ ok: false, error: e.message }, 500); }
     }
     // 默认：立即发布

@@ -1103,19 +1103,23 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title"><span class="icon">☁️</span> 云同步（多设备）</div>
+          <div class="card-title"><span class="icon">☁️</span> 云同步（多设备 · GitHub）</div>
+        </div>
+        <div class="input-group" style="margin-bottom:8px">
+          <label class="input-label">GitHub Token（需 gist 权限）</label>
+          <input class="input" id="ghToken" placeholder="ghp_xxx 或 github_pat_xxx" style="font-size:12px" onchange="DB.set('gh_token',this.value.trim())">
         </div>
         <div class="input-group" style="margin-bottom:10px">
-          <label class="input-label">CloudBase 环境 ID</label>
-          <input class="input" id="cloudEnvId" placeholder="如：bear-workbench-7gxxxx" style="font-size:12px" onchange="DB.set('cloud_env_id',this.value.trim())">
+          <label class="input-label">Gist ID（首次留空自动创建）</label>
+          <input class="input" id="ghGistId" placeholder="首次连接后自动填入" style="font-size:12px" onchange="DB.set('gh_gist_id',this.value.trim())">
         </div>
-        <div id="cloudStatus" style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">未连接。通过你已有的腾讯云 SCF 代理访问 CloudBase（浏览器不直连腾讯云域名，零外部依赖）。</div>
+        <div id="cloudStatus" style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">未连接。用你已有的 GitHub 账号 + 私人 Gist 存数据，浏览器经 SCF 代理访问（不直连 GitHub）。</div>
         <div class="btn-group" style="flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" onclick="cloudLogin()">🔗 连接并登录</button>
-          <button class="btn btn-outline btn-sm" onclick="cloudUpload()">☁️ 上传到云</button>
-          <button class="btn btn-outline btn-sm" onclick="cloudDownload()">⬇️ 从云下载</button>
+          <button class="btn btn-primary btn-sm" onclick="ghLogin()">🔗 连接 / 创建 Gist</button>
+          <button class="btn btn-outline btn-sm" onclick="ghUpload()">☁️ 上传到云</button>
+          <button class="btn btn-outline btn-sm" onclick="ghDownload()">⬇️ 从云下载</button>
         </div>
-        <div class="invest-note">数据存于你自己的 CloudBase 环境，仅你自己可见。需先在 CloudBase 控制台开启「匿名登录」+ 创建集合 <b>wb_sync</b>；然后在 SCF 函数环境变量加 <b>CLOUDBASE_ENV_ID</b>（值同上）。浏览器通过 SCF 代理访问，不直连腾讯云。</div>
+        <div class="invest-note">① 去 GitHub → Settings → Developer settings → Personal access tokens → 生成 token（勾 gist 权限）→ 复制；② 粘贴上方点「连接」即自动建私有 Gist；③ 手机/电脑填同一 token 即可同步。数据仅你可见。</div>
       </div>
 
       <div class="card">
@@ -1184,61 +1188,67 @@ const DB = {
   remove(key){localStorage.removeItem('bear_workbench_'+key)}
 };
 
-// ==================== Cloud Sync（通过 SCF 代理访问 CloudBase，零外部依赖） ====================
-let _cloudLoggedIn=false, _cloudTimer=null;
+// ==================== Cloud Sync（GitHub Gist，经 SCF 代理） ====================
+let _ghConnected=false, _ghTimer=null;
 async function _scfCloud(mode, data){
   const url=getScfUrl();
-  if(!url) throw new Error('未配置 SCF URL');
+  if(!url) throw new Error('未配置 SCF URL（设置→自动发布设置里填）');
   const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode,...data})});
   const text=await r.text();
   try{return JSON.parse(text);}catch(e){throw new Error('SCF返回非JSON('+r.status+'): '+text.slice(0,300));}
 }
-async function cloudLogin(){
-  const env=DB.get('cloud_env_id','');
-  if(!env){alert('⚠️ 请先在上方填写 CloudBase 环境 ID。\n（同时需在 SCF 环境变量加 CLOUDBASE_ENV_ID='+env+'）');return;}
-  DB.set('cloud_env_id',env);
+function _collectLocal(){
+  const data={};
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('bear_workbench_')===0)data[k]=localStorage.getItem(k);}
+  return data;
+}
+async function ghLogin(){
+  const token=DB.get('gh_token','').trim();
+  if(!token){alert('⚠️ 请先填写 GitHub Token（需 gist 权限）。\n去 GitHub → Settings → Developer settings → PAT → 勾 gist → 生成并复制。');return;}
   const st=document.getElementById('cloudStatus');
   if(st)st.textContent='连接中...';
   try{
-    // 先诊断：GET 测试确认 SCF 已更新（新版返回 ok:true）
-    const scfUrl=getScfUrl();
-    if(scfUrl){
-      const tr=await fetch(scfUrl);
-      const ttext=await tr.text();
-      if(ttext.indexOf('cloud_login')<0&&ttext.indexOf('CLOUDBASE')<0){
-        // 尝试解析
-        let tj=null; try{tj=JSON.parse(ttext);}catch(e){}
-        if(tj&&!tj.ok){
-          throw new Error('SCF代码可能未更新（GET测试返回: '+ttext.slice(0,200)+'）。请去腾讯云SCF控制台→函数代码→整段替换为最新index.js后重新部署。');
-        }
-      }
-    }
-    const j=await _scfCloud('cloud_login',{});
+    const content=JSON.stringify(_collectLocal());
+    let j=await _scfCloud('gh_gist_create',{token,content});
     if(j.ok){
-      _cloudLoggedIn=true;
-      DB.set('cloud_connected',true);
-      if(st)st.innerHTML='✅ 已连接（通过 SCF 代理）· 环境 '+env;
-      await cloudDownload(false);
-    }else{ throw new Error(j.error||'登录失败'); }
+      DB.set('gh_gist_id',j.gist_id);
+      const gidEl=document.getElementById('ghGistId'); if(gidEl)gidEl.value=j.gist_id;
+      _ghConnected=true; DB.set('cloud_connected',true);
+      if(st)st.innerHTML='✅ 已创建并连接 Gist<br>'+j.url;
+      await ghDownload(false);
+    }else{ throw new Error(j.error||'创建失败'); }
   }catch(e){ if(st)st.textContent='❌ 连接失败：'+e.message; }
 }
-async function cloudUpload(showAlert=true){
-  if(!_cloudLoggedIn){if(showAlert)alert('请先点「连接并登录」。');return;}
+async function ghUpload(showAlert=true){
+  const token=DB.get('gh_token','').trim();
+  let gistId=DB.get('gh_gist_id','').trim();
+  if(!token){if(showAlert)alert('请先点「连接 / 创建 Gist」。');return;}
+  if(!gistId){ // 没有 gist 则先创建
+    const st=document.getElementById('cloudStatus'); if(st)st.textContent='未找到 Gist，正在创建...';
+    const c=await _scfCloud('gh_gist_create',{token,content:JSON.stringify(_collectLocal())});
+    if(c.ok){gistId=c.gist_id;DB.set('gh_gist_id',gistId);const gidEl=document.getElementById('ghGistId');if(gidEl)gidEl.value=gistId;}
+    else{ if(showAlert)alert('❌ 创建失败：'+c.error); return; }
+  }
   try{
-    const data={};
-    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('bear_workbench_')===0)data[k]=localStorage.getItem(k);}
-    const j=await _scfCloud('cloud_upload',{data});
+    const content=JSON.stringify(_collectLocal());
+    const j=await _scfCloud('gh_gist_update',{token,gist_id:gistId,content});
     const st=document.getElementById('cloudStatus');
-    if(st)st.innerHTML='✅ 已上传 '+j.uploaded+'/'+j.total+' 项 · '+new Date().toLocaleTimeString('zh-CN');
-    if(showAlert)alert('✅ 已上传 '+j.uploaded+' 项到云端。');
+    if(st)st.innerHTML='✅ 已上传 '+Object.keys(JSON.parse(content)).length+' 项 · '+new Date().toLocaleTimeString('zh-CN');
+    if(showAlert)alert('✅ 已上传到 GitHub Gist。');
   }catch(e){if(showAlert)alert('❌ 上传失败：'+e.message);}
 }
-async function cloudDownload(showAlert=true){
-  if(!_cloudLoggedIn){if(showAlert)alert('请先点「连接并登录」。');return;}
+async function ghDownload(showAlert=true){
+  const token=DB.get('gh_token','').trim();
+  const gistId=DB.get('gh_gist_id','').trim();
+  if(!token||!gistId){if(showAlert)alert('请先点「连接 / 创建 Gist」。');return;}
   try{
-    const j=await _scfCloud('cloud_download',{});
+    const j=await _scfCloud('gh_gist_get',{token,gist_id:gistId});
+    if(!j.ok) throw new Error(j.error||'读取失败');
     let n=0;
-    Object.entries(j.data||{}).forEach(([k,v])=>{localStorage.setItem(k,v);n++;});
+    try{
+      const data=JSON.parse(j.content||'{}');
+      Object.entries(data).forEach(([k,v])=>{localStorage.setItem(k,v);n++;});
+    }catch(e){ throw new Error('Gist 内容解析失败: '+e.message); }
     const st=document.getElementById('cloudStatus');
     if(st)st.innerHTML='✅ 已从云下载 '+n+' 项 · '+new Date().toLocaleTimeString('zh-CN');
     if(showAlert)alert('✅ 已从云下载 '+n+' 项，刷新页面生效。');
@@ -1247,12 +1257,13 @@ async function cloudDownload(showAlert=true){
 // 本地写入后自动（防抖）上传到云
 (function(){
   const _origSet=DB.set.bind(DB);
-  DB.set=function(k,v){_origSet(k,v);if(_cloudLoggedIn){clearTimeout(_cloudTimer);_cloudTimer=setTimeout(()=>cloudUpload(false),1500);}};
+  DB.set=function(k,v){_origSet(k,v);if(_ghConnected){clearTimeout(_ghTimer);_ghTimer=setTimeout(()=>ghUpload(false),2000);}};
 })();
 window.addEventListener('load',()=>{
-  const ce=DB.get('cloud_env_id','');
-  const ceEl=document.getElementById('cloudEnvId'); if(ceEl)ceEl.value=ce;
-  if(DB.get('cloud_connected',false)&&ce){ cloudLogin(); }
+  const t=DB.get('gh_token',''); const g=DB.get('gh_gist_id','');
+  const tEl=document.getElementById('ghToken'); if(tEl)tEl.value=t;
+  const gEl=document.getElementById('ghGistId'); if(gEl)gEl.value=g;
+  if(t&&g){ _ghConnected=true; }
 });
 
 // Get today's date key (YYYY-MM-DD format)
