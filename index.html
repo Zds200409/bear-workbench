@@ -342,6 +342,25 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 .ielts-four .ef{background:var(--bg-main);border-radius:var(--radius-sm);padding:10px}
 .ielts-four .ef-t{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:4px}
 .ielts-four .ef-d{font-size:12px;color:var(--text-secondary);line-height:1.5}
+.invest-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+.invest-stat{background:var(--card,#fff);border-radius:14px;padding:14px}
+.invest-stat .v{font-size:22px;font-weight:700;color:var(--primary)}
+.invest-stat .l{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.invest-donut-wrap{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.invest-donut{width:150px;height:150px;border-radius:50%;position:relative;flex-shrink:0}
+.invest-donut::after{content:'';position:absolute;inset:34px;background:var(--card,#fff);border-radius:50%}
+.invest-donut .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1}
+.invest-legend{flex:1;min-width:160px;font-size:13px}
+.invest-legend .row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.invest-legend .dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.invest-warn{background:#fff3cd;color:#8a6d3b;border:1px solid #ffe69c;border-radius:10px;padding:10px;font-size:13px;margin:10px 0;line-height:1.6}
+.invest-table{width:100%;border-collapse:collapse;font-size:13px}
+.invest-table th,.invest-table td{padding:6px 4px;text-align:left;border-bottom:1px solid var(--border,#eee)}
+.invest-table input{border:1px solid var(--border,#ddd);border-radius:6px;padding:4px 6px;font-size:13px;width:100%;box-sizing:border-box}
+.inv-plan{margin-bottom:0}
+.invest-bar{height:10px;background:var(--border,#eee);border-radius:6px;overflow:hidden;margin-top:6px}
+.invest-bar > i{display:block;height:100%;background:var(--primary)}
+.invest-note{font-size:12px;color:var(--text-secondary);line-height:1.6;margin-top:8px}
 </style>
 </head>
 <body>
@@ -563,6 +582,15 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         <label class="input-label">📝 备注</label>
         <textarea class="note-area" id="englishNotes" placeholder="写点什么，怕忘了就记在这里..."></textarea>
       </div>
+    </section>
+
+    <!-- ========== 投资看板 ========== -->
+    <section class="page" id="page-invest" data-page="invest">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">💰</span> 投资看板</h1>
+        <span class="page-badge" id="investBadge"></span>
+      </div>
+      <div id="investContent"></div>
     </section>
 
     <!-- ========== 饮食·打卡 ========== -->
@@ -1169,6 +1197,7 @@ const NAV_ITEMS = [
   {id:'ai',icon:'🤖',label:'学AI'},
   {id:'wellness',icon:'🍵',label:'养生'},
   {id:'reading',icon:'📚',label:'每日阅读'},
+  {id:'invest',icon:'💰',label:'投资看板'},
   {id:'review',icon:'📊',label:'每周复盘'},
   {id:'settings',icon:'⚙️',label:'设置'}
 ];
@@ -1198,6 +1227,7 @@ function switchPage(pageId){
   if(pageId==='english')renderEnglish();
   if(pageId==='diet')renderDiet();
   if(pageId==='reading')renderReading();
+  if(pageId==='invest')renderInvest();
   if(pageId==='review')renderReview();
   if(pageId==='settings')renderSettings();
   if(pageId==='ai')renderAi();
@@ -2969,6 +2999,169 @@ function handleFabClick(){
   };
   if(actions[currentPage])actions[currentPage]();
   else alert('当前页面暂无快捷操作');
+}
+
+// ==================== Investment Dashboard ====================
+const INVEST_CAT_COLORS={
+  '黄金':'#f1c40f',
+  '海外/纳斯达克':'#3498db',
+  '科技·集成电路':'#e67e22',
+  '科技·AI':'#9b59b6',
+  '科技·机器人':'#1abc9c',
+  '科技·智能汽车':'#e74c3c',
+  '宽基·沪深300':'#2ecc71',
+  '宽基·A500':'#16a085'
+};
+const INVEST_PALETTE=['#34495e','#7f8c8d','#d35400','#c0392b','#8e44ad','#2980b9','#27ae60','#f39c12'];
+function investCatColor(cat,i){
+  if(INVEST_CAT_COLORS[cat])return INVEST_CAT_COLORS[cat];
+  return INVEST_PALETTE[i%INVEST_PALETTE.length];
+}
+function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function fmtMoney(n){return '¥'+Math.round(n).toLocaleString('zh-CN');}
+const DEFAULT_HOLDINGS=[
+  {name:'易方达黄金ETF联接C',category:'黄金',amount:3239,cost:3239},
+  {name:'广发纳斯达克100ETF联接A',category:'海外/纳斯达克',amount:964,cost:964},
+  {name:'国泰中证全指集成电路ETF联接C',category:'科技·集成电路',amount:457,cost:457},
+  {name:'天弘中证人工智能C',category:'科技·AI',amount:407,cost:407},
+  {name:'易方达机器人ETF联接C',category:'科技·机器人',amount:421,cost:421},
+  {name:'天弘中证智能汽车C',category:'科技·智能汽车',amount:331,cost:331},
+  {name:'易方达沪深300ETF联接A',category:'宽基·沪深300',amount:58,cost:58},
+  {name:'易方达中证A500ETF联接A',category:'宽基·A500',amount:38,cost:38}
+];
+const DEFAULT_PLAN={daily:55,start:'2025-01-01',currentAge:22,retireAge:55,target:1000000,annualRate:0.06};
+
+function getHoldings(){
+  let h=DB.get('invest_holdings',null);
+  if(!h){h=JSON.parse(JSON.stringify(DEFAULT_HOLDINGS));DB.set('invest_holdings',h);}
+  return h;
+}
+function getPlan(){return Object.assign({},DEFAULT_PLAN,DB.get('invest_plan',{}));}
+
+function renderInvest(){
+  const holdings=getHoldings();
+  const plan=getPlan();
+  const total=holdings.reduce((s,h)=>s+(Number(h.amount)||0),0);
+  const totalCost=holdings.reduce((s,h)=>s+(Number(h.cost)||0),0);
+  const profit=total-totalCost;
+  const agg={};
+  holdings.forEach(h=>{agg[h.category]=(agg[h.category]||0)+(Number(h.amount)||0);});
+  const cats=Object.keys(agg);
+  let acc=0;const stops=[];
+  cats.forEach((cat,i)=>{
+    const pct=total>0?agg[cat]/total*100:0;
+    stops.push(`${investCatColor(cat,i)} ${acc.toFixed(2)}% ${(acc+pct).toFixed(2)}%`);
+    acc+=pct;
+  });
+  const donutBg=stops.length?`conic-gradient(${stops.join(',')})`:'#ddd';
+  const legend=cats.map((cat,i)=>`
+    <div class="row">
+      <span class="dot" style="background:${investCatColor(cat,i)}"></span>
+      <span style="flex:1">${cat}</span>
+      <b>${agg[cat]>0?(agg[cat]/total*100).toFixed(1):'0.0'}%</b>
+    </div>`).join('');
+  const goldPct=total>0?((agg['黄金']||0)/total*100):0;
+  const goldWarn=goldPct>10?`<div class="invest-warn">⚠️ 黄金占比 <b>${goldPct.toFixed(1)}%</b>，远超建议上限 10%。建议逐步减仓至约 ${fmtMoney(total*0.1)}，转配纯债/宽基以降低波动。当前科技类合计偏高，注意单一赛道风险。</div>`:'';
+  const years=Math.max(0,(plan.retireAge||55)-(plan.currentAge||22));
+  const annualPMT=(Number(plan.daily)||0)*365;
+  const r=Number(plan.annualRate)||0;
+  let fv=annualPMT*years;
+  if(r>0){fv=annualPMT*((Math.pow(1+r,years)-1)/r);}
+  const target=Number(plan.target)||0;
+  const progPct=target>0?Math.min(100,total/target*100):0;
+  const fvPct=target>0?Math.min(100,fv/target*100):0;
+  const rows=holdings.map((h,i)=>`
+    <tr>
+      <td><input class="inv-name" data-i="${i}" value="${escAttr(h.name)}"></td>
+      <td><input class="inv-cat" data-i="${i}" value="${escAttr(h.category)}" style="width:110px"></td>
+      <td><input class="inv-amt" data-i="${i}" type="number" value="${h.amount||0}" style="width:90px"></td>
+      <td><input class="inv-cost" data-i="${i}" type="number" value="${h.cost||0}" style="width:90px"></td>
+      <td style="color:var(--text-secondary)">${total>0?((h.amount||0)/total*100).toFixed(1):'0.0'}%</td>
+      <td><button class="btn btn-outline btn-sm" onclick="investRemove(${i})">🗑</button></td>
+    </tr>`).join('');
+  const el=document.getElementById('investContent');
+  if(!el)return;
+  el.innerHTML=`
+    <div class="invest-summary">
+      <div class="invest-stat"><div class="v">${fmtMoney(total)}</div><div class="l">总资产（持仓市值）</div></div>
+      <div class="invest-stat"><div class="v" style="color:${profit>=0?'#e74c3c':'#27ae60'}">${profit>=0?'+':''}${fmtMoney(profit)}</div><div class="l">累计收益（市值−成本）</div></div>
+      <div class="invest-stat"><div class="v">${fmtMoney(Number(plan.daily)||0)}</div><div class="l">日均定投</div></div>
+      <div class="invest-stat"><div class="v">${(plan.retireAge||55)}岁</div><div class="l">目标退休（距今 ${years} 年）</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="icon">🥧</span> 资产配置占比</div></div>
+      <div class="invest-donut-wrap">
+        <div class="invest-donut" style="background:${donutBg}">
+          <div class="center"><div style="font-size:11px;color:var(--text-secondary)">总资产</div><div style="font-size:16px;font-weight:700">${fmtMoney(total)}</div></div>
+        </div>
+        <div class="invest-legend">${legend||'<div style="color:var(--text-secondary)">暂无持仓</div>'}</div>
+      </div>
+      ${goldWarn}
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="icon">🎯</span> 55岁退休测算</div></div>
+      <div style="font-size:13px;line-height:1.8">
+        <div>按 <b>日均 ${fmtMoney(Number(plan.daily)||0)}</b> 定投、年化 <b>${(r*100).toFixed(0)}%</b>、持续 <b>${years}</b> 年：</div>
+        <div style="font-size:20px;font-weight:700;color:var(--primary);margin:8px 0">预计退休时 ≈ ${fmtMoney(fv)}</div>
+        <div class="invest-bar"><i style="width:${fvPct}%"></i></div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:6px">距目标 ${fmtMoney(target)} 的 <b>${fvPct.toFixed(1)}%</b>（测算含复利，未计已持仓增值，仅供参考）</div>
+        <div class="invest-note">📌 当前资产 ${fmtMoney(total)} 已占目标 ${progPct.toFixed(2)}%。提高日均定投额或年化，可显著拉近退休目标。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="icon">📋</span> 持仓明细</div><button class="btn btn-primary btn-sm" onclick="investAdd()">＋ 添加</button></div>
+      <table class="invest-table">
+        <thead><tr><th>名称</th><th>类别</th><th>市值</th><th>成本</th><th>占比</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="investSave()">💾 保存持仓</button>
+      <div class="invest-note">建议配置参考：黄金 10% · 纯债 25% · 货基 5% · 宽基(A500/300) 30% · 科技/海外 30%。改完点保存即生效。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="icon">⚙️</span> 定投与退休计划</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="input-label">日均定投(¥)</label><input class="input inv-plan" id="planDaily" type="number" value="${plan.daily}"></div>
+        <div><label class="input-label">当前年龄</label><input class="input inv-plan" id="planCurAge" type="number" value="${plan.currentAge}"></div>
+        <div><label class="input-label">退休年龄</label><input class="input inv-plan" id="planRetAge" type="number" value="${plan.retireAge}"></div>
+        <div><label class="input-label">目标金额(¥)</label><input class="input inv-plan" id="planTarget" type="number" value="${plan.target}"></div>
+        <div><label class="input-label">预期年化(%)</label><input class="input inv-plan" id="planRate" type="number" step="0.5" value="${(plan.annualRate*100)}"></div>
+        <div><label class="input-label">定投起始日</label><input class="input inv-plan" id="planStart" type="date" value="${plan.start}"></div>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="investSavePlan()">💾 保存计划</button>
+    </div>
+  `;
+  const badge=document.getElementById('investBadge');
+  if(badge)badge.textContent=fmtMoney(total);
+}
+
+function investAdd(){const h=getHoldings();h.push({name:'',category:'',amount:0,cost:0});DB.set('invest_holdings',h);renderInvest();}
+function investRemove(i){const h=getHoldings();h.splice(i,1);DB.set('invest_holdings',h);renderInvest();}
+function investSave(){
+  const h=getHoldings();
+  document.querySelectorAll('.inv-name').forEach(inp=>{h[Number(inp.dataset.i)].name=inp.value.trim();});
+  document.querySelectorAll('.inv-cat').forEach(inp=>{h[Number(inp.dataset.i)].category=inp.value.trim();});
+  document.querySelectorAll('.inv-amt').forEach(inp=>{h[Number(inp.dataset.i)].amount=Number(inp.value)||0;});
+  document.querySelectorAll('.inv-cost').forEach(inp=>{h[Number(inp.dataset.i)].cost=Number(inp.value)||0;});
+  DB.set('invest_holdings',h);
+  renderInvest();
+  alert('✅ 持仓已保存');
+}
+function investSavePlan(){
+  const plan={
+    daily:Number(document.getElementById('planDaily').value)||0,
+    currentAge:Number(document.getElementById('planCurAge').value)||22,
+    retireAge:Number(document.getElementById('planRetAge').value)||55,
+    target:Number(document.getElementById('planTarget').value)||0,
+    annualRate:(Number(document.getElementById('planRate').value)||0)/100,
+    start:document.getElementById('planStart').value||'2025-01-01'
+  };
+  DB.set('invest_plan',plan);
+  renderInvest();
+  alert('✅ 计划已保存');
 }
 
 // ==================== AI Learning Module ====================
