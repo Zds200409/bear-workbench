@@ -471,37 +471,6 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         <textarea class="note-area" id="wechatDraft" style="margin-top:14px;min-height:260px;font-size:13px;line-height:1.7" placeholder="点击「立即生成」后，这里会出现基于今日热点的公众号文章草稿，可自由编辑..."></textarea>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title"><span class="icon">⚙️</span> 自动发布设置</div>
-        </div>
-        <div class="input-group" style="margin-bottom:14px">
-          <label class="input-label">🚀 公众号发布地址（SCF 函数 URL）</label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input class="input" id="wechatScfUrl" placeholder="https://xxx.ap-guangzhou.tencentscf.com" style="font-size:12px;flex:1" onchange="DB.set('wechat_scf_url',this.value.trim())">
-            <button class="btn btn-outline btn-sm" onclick="testScfUrl()">测试连接</button>
-          </div>
-          <div id="scfTestResult" style="font-size:11px;margin-top:4px;color:var(--text-secondary)">填一次即可。腾讯云 SCF 建好函数后，把「函数 URL」粘到这里。密钥只在云端，不进本机。</div>
-        </div>
-        <div class="setting-item">
-          <div class="setting-info">
-            <div class="setting-name">定时自动发布时间</div>
-            <div class="setting-desc">每天该时间由腾讯云 SCF 自动发布（需先在 SCF 建「每15分钟」定时器）</div>
-          </div>
-          <input type="time" class="input" id="autoPublishTime" value="09:30" style="width:100px;padding:6px 10px;font-size:13px" onchange="saveWechatSchedule()">
-        </div>
-        <div class="setting-item">
-          <div class="setting-info">
-            <div class="setting-name">自动发布开关</div>
-            <div class="setting-desc">开启后把当前草稿入队，到点自动发（需先传封面图）</div>
-          </div>
-          <div class="toggle-switch on" id="autoPublishToggle" onclick="saveWechatSchedule(this)"></div>
-        </div>
-        <div class="input-group" style="margin-top:14px">
-          <label class="input-label">📝 备注</label>
-          <textarea class="note-area" id="wechatNotes" placeholder="写点什么，怕忘了就记在这里..."></textarea>
-        </div>
-      </div>
     </section>
 
     <!-- ========== 每日热点新闻（按截图重做） ========== -->
@@ -1086,6 +1055,34 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           <button class="btn btn-outline btn-sm" onclick="testAiConfig()">🔌 测试连接</button>
         </div>
         <p id="aiConfigStatus" style="font-size:12px;margin-top:10px;color:var(--text-secondary)"></p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🚀</span> 自动发布设置</div>
+        </div>
+        <div class="input-group" style="margin-bottom:14px">
+          <label class="input-label">公众号发布地址（SCF 函数 URL）</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="input" id="wechatScfUrl" placeholder="https://xxx.ap-guangzhou.tencentscf.com" style="font-size:12px;flex:1" onchange="DB.set('wechat_scf_url',this.value.trim())">
+            <button class="btn btn-outline btn-sm" onclick="testScfUrl()">测试连接</button>
+          </div>
+          <div id="scfTestResult" style="font-size:11px;margin-top:4px;color:var(--text-secondary)">填一次即可。腾讯云 SCF 建好函数后，把「函数 URL」粘到这里。密钥只在云端，不进本机。</div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">定时自动发布时间</div>
+            <div class="setting-desc">每天该时间由腾讯云 SCF 自动发布（需先在 SCF 建「每15分钟」定时器）</div>
+          </div>
+          <input type="time" class="input" id="autoPublishTime" value="09:30" style="width:100px;padding:6px 10px;font-size:13px" onchange="saveWechatSchedule()">
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-name">自动发布开关</div>
+            <div class="setting-desc">开启后把当前草稿入队，到点自动发（需先传封面图）</div>
+          </div>
+          <div class="toggle-switch on" id="autoPublishToggle" onclick="saveWechatSchedule(this)"></div>
+        </div>
       </div>
 
       <div class="card">
