@@ -1196,11 +1196,23 @@ async function _scfCloud(mode, data){
 async function cloudLogin(){
   const env=DB.get('cloud_env_id','');
   if(!env){alert('⚠️ 请先在上方填写 CloudBase 环境 ID。\n（同时需在 SCF 环境变量加 CLOUDBASE_ENV_ID='+env+'）');return;}
-  // 同步到 SCF 所需的环境变量提示
   DB.set('cloud_env_id',env);
   const st=document.getElementById('cloudStatus');
   if(st)st.textContent='连接中...';
   try{
+    // 先诊断：GET 测试确认 SCF 已更新（新版返回 ok:true）
+    const scfUrl=getScfUrl();
+    if(scfUrl){
+      const tr=await fetch(scfUrl);
+      const ttext=await tr.text();
+      if(ttext.indexOf('cloud_login')<0&&ttext.indexOf('CLOUDBASE')<0){
+        // 尝试解析
+        let tj=null; try{tj=JSON.parse(ttext);}catch(e){}
+        if(tj&&!tj.ok){
+          throw new Error('SCF代码可能未更新（GET测试返回: '+ttext.slice(0,200)+'）。请去腾讯云SCF控制台→函数代码→整段替换为最新index.js后重新部署。');
+        }
+      }
+    }
     const j=await _scfCloud('cloud_login',{});
     if(j.ok){
       _cloudLoggedIn=true;
