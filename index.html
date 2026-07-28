@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🐻 熊熊工作台</title>
+  <title>🐻 熊熊工作台</title>
+  <meta name="theme-color" content="#5a9a6e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="熊熊工作台">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -309,6 +315,13 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 </style>
 </head>
 <body>
+
+<!-- PWA 安装引导横幅 -->
+<div id="installBanner" style="display:none;position:fixed;left:0;right:0;bottom:calc(72px + env(safe-area-inset-bottom));z-index:999;margin:0 12px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;align-items:center;gap:8px">
+  <div style="flex:1;font-size:13px;color:var(--text-primary);line-height:1.5">📲 <b>装到主屏</b>，下次秒开还能离线看<br><span style="font-size:11px;color:var(--text-secondary)">像 App 一样用，不占内存</span></div>
+  <button class="btn btn-primary btn-sm" onclick="installApp()">安装</button>
+  <button class="btn btn-outline btn-sm" onclick="dismissInstall()">忽略</button>
+</div>
 
 <div class="app-container">
   <!-- Sidebar / Bottom Nav -->
@@ -994,6 +1007,7 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         <div class="btn-group" style="flex-wrap:wrap">
           <button class="btn btn-outline btn-sm" onclick="exportData()">📤 导出数据</button>
           <button class="btn btn-outline btn-sm" onclick="importDataPrompt()">📥 导入数据</button>
+          <button class="btn btn-outline btn-sm" onclick="installApp()">📲 安装到主屏</button>
           <button class="btn btn-outline btn-sm" style="color:#e74c3c;border-color:#e74c3c" onclick="clearAllData()">🗑️ 清空所有数据</button>
         </div>
         <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
@@ -2825,5 +2839,26 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 公众号：回载定时发布状态（后端未开则忽略）
   loadWechatSchedule();
 });
+
+// ===== PWA：安装引导 + Service Worker 缓存加速 =====
+let _deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();_deferredPrompt=e;
+  const b=document.getElementById('installBanner');
+  if(b)b.style.display='flex';
+});
+window.addEventListener('appinstalled',()=>{
+  const b=document.getElementById('installBanner');if(b)b.style.display='none';
+});
+function installApp(){
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  if(_deferredPrompt){_deferredPrompt.prompt();_deferredPrompt.userChoice.then(()=>{_deferredPrompt=null;});return;}
+  if(ios){alert('📱 iOS 安装：点 Safari 底部「分享」→「添加到主屏幕」即可。');return;}
+  alert('请使用浏览器菜单中的「安装应用 / 添加到主屏幕」：\n· Android Chrome：右上角 ⋮ → 安装应用\n· 桌面 Chrome：地址栏右侧 ⊕ 图标');
+}
+function dismissInstall(){const b=document.getElementById('installBanner');if(b)b.style.display='none';}
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});
+}
 </script>
 </body>

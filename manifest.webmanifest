@@ -1,0 +1,19 @@
+{
+  "name": "🐻 熊熊工作台",
+  "short_name": "工作台",
+  "description": "个人效率工作台：计划 / 热点 / 学AI / 养生 / 公众号发布",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0f4ef",
+  "theme_color": "#5a9a6e",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
