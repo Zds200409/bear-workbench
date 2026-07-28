@@ -172,27 +172,55 @@ function cors(body, status = 200) {
   };
 }
 
+// 解析 HTTP body（兼容函数 URL 可能的 base64 编码）
+async function parseBody(event) {
+  let body = event.body;
+  if (body == null) return {};
+  if (typeof body === 'string') {
+    if (event.isBase64Encoded) {
+      body = Buffer.from(body, 'base64').toString('utf8');
+    }
+    try { body = JSON.parse(body); } catch (e) { throw new Error('body 不是合法 JSON'); }
+  }
+  return body || {};
+}
+
 exports.main_handler = async (event, context) => {
   try {
     if (!APPID || !APPSECRET) {
       return cors({ ok: false, error: '未配置 WECHAT_APPID / WECHAT_APPSECRET 环境变量' }, 500);
     }
     // 定时器触发（无 httpMethod）
-    if (!event.httpMethod && event.Type !== 'Timer' && typeof event === 'object' && !event.body) {
-      // 保守判断为定时器
-    }
     const isTimer = event.Type === 'Timer' || (!event.httpMethod && !event.body);
     if (isTimer) {
       const r = await runScheduled();
       return cors(r);
     }
-    // HTTP 触发（API 网关 / Web 函数）
+    // HTTP 触发（函数 URL）
     if (event.httpMethod === 'OPTIONS') return cors({ ok: true });
-    let body = event.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch (e) { return cors({ ok: false, error: 'body 不是合法 JSON' }, 400); }
+
+    // 测试连接：GET 请求 或 mode='test' → 仅校验密钥，不发布
+    if (event.httpMethod === 'GET') {
+      try {
+        const token = await getAccessToken();
+        return cors({ ok: true, test: true, tokenLen: (token || '').length, note: '函数可访问微信接口，密钥有效' });
+      } catch (e) {
+        return cors({ ok: false, test: true, error: '密钥校验失败: ' + e.message }, 500);
+      }
     }
-    body = body || {};
+
+    let body = {};
+    try { body = await parseBody(event); }
+    catch (e) { return cors({ ok: false, error: e.message }, 400); }
+
+    if (body.mode === 'test') {
+      try {
+        const token = await getAccessToken();
+        return cors({ ok: true, test: true, tokenLen: (token || '').length, note: '函数可访问微信接口，密钥有效' });
+      } catch (e) {
+        return cors({ ok: false, test: true, error: '密钥校验失败: ' + e.message }, 500);
+      }
+    }
     if (body.mode === 'schedule') {
       const r = await scheduleDraft(body);
       return cors(r);

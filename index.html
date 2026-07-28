@@ -477,8 +477,11 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         </div>
         <div class="input-group" style="margin-bottom:14px">
           <label class="input-label">🚀 公众号发布地址（SCF 函数 URL）</label>
-          <input class="input" id="wechatScfUrl" placeholder="https://xxx.apigw.tencentcs.com/release/..." style="font-size:12px" onchange="DB.set('wechat_scf_url',this.value.trim())">
-          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">填一次即可。在腾讯云 SCF 建好函数后，把 API 网关访问路径粘到这里。密钥只在云端，不进本机。</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="input" id="wechatScfUrl" placeholder="https://xxx.ap-guangzhou.tencentscf.com" style="font-size:12px;flex:1" onchange="DB.set('wechat_scf_url',this.value.trim())">
+            <button class="btn btn-outline btn-sm" onclick="testScfUrl()">测试连接</button>
+          </div>
+          <div id="scfTestResult" style="font-size:11px;margin-top:4px;color:var(--text-secondary)">填一次即可。腾讯云 SCF 建好函数后，把「函数 URL」粘到这里。密钥只在云端，不进本机。</div>
         </div>
         <div class="setting-item">
           <div class="setting-info">
@@ -2956,6 +2959,13 @@ function saveWeeklyReview(){
 // ==================== Settings ====================
 function renderSettings(){
   const s=DB.get('settings',{});
+  // 预填已部署的 SCF 函数 URL（省去手动输入）
+  const scf=document.getElementById('wechatScfUrl');
+  if(scf){
+    const saved=DB.get('wechat_scf_url','');
+    if(!saved){ scf.value=DEFAULT_SCF_URL; DB.set('wechat_scf_url',DEFAULT_SCF_URL); }
+    else scf.value=saved;
+  }
   document.getElementById('settingNickname').value=s.nickname||'';
   document.getElementById('settingGoal').value=s.goal||'55岁提前退休';
   const cfg=getAiConfig();
@@ -2965,6 +2975,33 @@ function renderSettings(){
   if(ap)ap.value=cfg.provider||'deepseek';
   if(ak)ak.value=cfg.apiKey||'';
   if(am)am.value=cfg.model||(cfg.provider==='kimi'?'moonshot-v1-8k':'deepseek-chat');
+}
+
+// SCF 函数 URL（腾讯云已停 API 网关，改用函数 URL）
+const DEFAULT_SCF_URL='https://1459418276-0rdrge7lrv.ap-guangzhou.tencentscf.com';
+
+// 测试 SCF 连接 + 校验微信密钥
+function testScfUrl(){
+  const el=document.getElementById('scfTestResult');
+  const url=(DB.get('wechat_scf_url','')||'').trim();
+  if(!url){ if(el){el.textContent='⚠️ 请先填写函数 URL';el.style.color='#e67e22';} return; }
+  if(el){el.textContent='⏳ 正在测试连接…';el.style.color='var(--text-secondary)';}
+  fetch(url,{method:'GET',headers:{'Content-Type':'application/json'}})
+    .then(r=>r.json().then(j=>({status:r.status,body:j})))
+    .then(({status,body})=>{
+      if(el){
+        if(body && body.ok && body.test){
+          el.textContent='✅ 连接成功：'+body.note+'（token 长度 '+body.tokenLen+'）';
+          el.style.color='#27ae60';
+        }else{
+          el.textContent='⚠️ '+(body && body.error ? body.error : '返回异常 status='+status);
+          el.style.color='#e67e22';
+        }
+      }
+    })
+    .catch(err=>{
+      if(el){el.textContent='❌ 连接失败：'+err.message+'（检查函数 URL 是否正确、是否启用公网访问）';el.style.color='#e74c3c';}
+    });
 }
 
 function toggleSwitch(el){el.classList.toggle('on')}
