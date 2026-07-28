@@ -3121,14 +3121,14 @@ function investCatColor(cat,i){
 function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function fmtMoney(n){return '¥'+Math.round(n).toLocaleString('zh-CN');}
 const DEFAULT_HOLDINGS=[
-  {name:'易方达黄金ETF联接C',category:'黄金',amount:3239,cost:3239},
-  {name:'广发纳斯达克100ETF联接A',category:'海外/纳斯达克',amount:964,cost:964},
-  {name:'国泰中证全指集成电路ETF联接C',category:'科技·集成电路',amount:457,cost:457},
-  {name:'天弘中证人工智能C',category:'科技·AI',amount:407,cost:407},
-  {name:'易方达机器人ETF联接C',category:'科技·机器人',amount:421,cost:421},
-  {name:'天弘中证智能汽车C',category:'科技·智能汽车',amount:331,cost:331},
-  {name:'易方达沪深300ETF联接A',category:'宽基·沪深300',amount:58,cost:58},
-  {name:'易方达中证A500ETF联接A',category:'宽基·A500',amount:38,cost:38}
+  {name:'易方达黄金ETF联接C',category:'黄金',code:'002963',shares:0,amount:3239,cost:3239},
+  {name:'广发纳斯达克100ETF联接A',category:'海外/纳斯达克',code:'270042',shares:0,amount:964,cost:964},
+  {name:'国泰中证全指集成电路ETF联接C',category:'科技·集成电路',code:'012873',shares:0,amount:457,cost:457},
+  {name:'天弘中证人工智能C',category:'科技·AI',code:'011839',shares:0,amount:407,cost:407},
+  {name:'易方达机器人ETF联接C',category:'科技·机器人',code:'018125',shares:0,amount:421,cost:421},
+  {name:'天弘中证智能汽车C',category:'科技·智能汽车',code:'010771',shares:0,amount:331,cost:331},
+  {name:'易方达沪深300ETF联接A',category:'宽基·沪深300',code:'110020',shares:0,amount:58,cost:58},
+  {name:'易方达中证A500ETF联接A',category:'宽基·A500',code:'022459',shares:0,amount:38,cost:38}
 ];
 const DEFAULT_PLAN={daily:55,start:'2025-01-01',currentAge:22,retireAge:55,target:1000000,annualRate:0.06};
 
@@ -3139,28 +3139,81 @@ function getHoldings(){
 }
 function getPlan(){return Object.assign({},DEFAULT_PLAN,DB.get('invest_plan',{}));}
 
+// 基金净值 JSONP 拉取（天天基金接口，浏览器 <script> 直连，不受 CORS 限制）
+function fetchFundNav(codes, cb){
+  const results={}; let pending=codes.length;
+  if(!pending){cb(results);return;}
+  window.jsonpgz=function(d){
+    if(d&&d.code){
+      const nav=parseFloat(d.netValue)||parseFloat(d.gsz)||0;
+      results[d.code]={nav:nav, name:d.name||'', date:d.jzrq||'', gsz:parseFloat(d.gsz)||0};
+    }
+    pending--;
+    if(pending<=0)cb(results);
+  };
+  codes.forEach(function(code){
+    const s=document.createElement('script');
+    s.src='https://fundgz.tencent.com/js/'+code+'.js?t='+Date.now();
+    s.onerror=function(){pending--; if(pending<=0)cb(results);};
+    s.onload=function(){setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},0);};
+    document.head.appendChild(s);
+  });
+  setTimeout(function(){ if(pending>0){pending=0; cb(results);} }, 8000);
+}
+function getNavCache(){return DB.get('fund_nav_cache',{})||{};}
+function setNavCache(map){DB.set('fund_nav_cache',map);}
+function investNavDate(){
+  const c=getNavCache(); const ds=Object.values(c).map(function(x){return x.date;}).filter(Boolean);
+  return ds.length?ds.sort().pop():'';
+}
+
 function renderInvest(){
+  const cache=getNavCache();
+  paintInvest(cache); // 先用缓存/兼容渲染
+  const holdings=getHoldings();
+  const codes=holdings.filter(function(h){return h.code&&h.shares>0;}).map(function(h){return h.code;});
+  if(codes.length){
+    fetchFundNav(codes, function(navMap){
+      const merged=Object.assign({}, getNavCache(), navMap);
+      setNavCache(merged);
+      paintInvest(merged);
+    });
+  }
+}
+
+function paintInvest(navMap){
+  navMap=navMap||{};
   const holdings=getHoldings();
   const plan=getPlan();
-  const total=holdings.reduce((s,h)=>s+(Number(h.amount)||0),0);
-  const totalCost=holdings.reduce((s,h)=>s+(Number(h.cost)||0),0);
+  // 每只市值：自动=份额×净值；手动=原 amount
+  holdings.forEach(function(h){
+    if(h.code&&h.shares>0&&navMap[h.code]){
+      h._amount=h.shares*navMap[h.code].nav; h._auto=true; h._nav=navMap[h.code].nav; h._navDate=navMap[h.code].date;
+    }else if(Number(h.amount)>0){
+      h._amount=Number(h.amount); h._auto=false; h._nav=0; h._navDate='';
+    }else{ h._amount=0; h._auto=false; h._nav=0; h._navDate=''; }
+  });
+  const total=holdings.reduce(function(s,h){return s+(h._amount||0);},0);
+  const totalCost=holdings.reduce(function(s,h){return s+(Number(h.cost)||0);},0);
   const profit=total-totalCost;
   const agg={};
-  holdings.forEach(h=>{agg[h.category]=(agg[h.category]||0)+(Number(h.amount)||0);});
+  holdings.forEach(function(h){agg[h.category]=(agg[h.category]||0)+(h._amount||0);});
   const cats=Object.keys(agg);
   let acc=0;const stops=[];
-  cats.forEach((cat,i)=>{
+  cats.forEach(function(cat,i){
     const pct=total>0?agg[cat]/total*100:0;
-    stops.push(`${investCatColor(cat,i)} ${acc.toFixed(2)}% ${(acc+pct).toFixed(2)}%`);
+    stops.push(investCatColor(cat,i)+' '+acc.toFixed(2)+'% '+(acc+pct).toFixed(2)+'%');
     acc+=pct;
   });
-  const donutBg=stops.length?`conic-gradient(${stops.join(',')})`:'#ddd';
-  const legend=cats.map((cat,i)=>`
+  const donutBg=stops.length?('conic-gradient('+stops.join(',')+')'):'#ddd';
+  const legend=cats.map(function(cat,i){
+    return `
     <div class="row">
       <span class="dot" style="background:${investCatColor(cat,i)}"></span>
       <span style="flex:1">${cat}</span>
       <b>${agg[cat]>0?(agg[cat]/total*100).toFixed(1):'0.0'}%</b>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   const goldPct=total>0?((agg['黄金']||0)/total*100):0;
   const goldWarn=goldPct>10?`<div class="invest-warn">⚠️ 黄金占比 <b>${goldPct.toFixed(1)}%</b>，远超建议上限 10%。建议逐步减仓至约 ${fmtMoney(total*0.1)}，转配纯债/宽基以降低波动。当前科技类合计偏高，注意单一赛道风险。</div>`:'';
   const years=Math.max(0,(plan.retireAge||55)-(plan.currentAge||22));
@@ -3171,27 +3224,33 @@ function renderInvest(){
   const target=Number(plan.target)||0;
   const progPct=target>0?Math.min(100,total/target*100):0;
   const fvPct=target>0?Math.min(100,fv/target*100):0;
-  const rows=holdings.map((h,i)=>`
+  const rows=holdings.map(function(h,i){
+    const navTip = h._auto?`<span style="font-size:11px;color:var(--text-secondary)">净值${h._nav.toFixed(4)}·${h._navDate}</span>`:`<span style="font-size:11px;color:#e67e22">手动/待填份额</span>`;
+    return `
     <tr>
       <td><input class="inv-name" data-i="${i}" value="${escAttr(h.name)}"></td>
       <td><input class="inv-cat" data-i="${i}" value="${escAttr(h.category)}" style="width:110px"></td>
-      <td><input class="inv-amt" data-i="${i}" type="number" value="${h.amount||0}" style="width:90px"></td>
+      <td><input class="inv-code" data-i="${i}" value="${escAttr(h.code||'')}" style="width:90px" placeholder="基金代码"></td>
+      <td><input class="inv-shares" data-i="${i}" type="number" value="${h.shares||0}" style="width:80px" placeholder="份额"></td>
+      <td><input class="inv-amt" data-i="${i}" type="number" value="${h._amount||0}" style="width:90px" ${h._auto?'readonly':''}></td>
       <td><input class="inv-cost" data-i="${i}" type="number" value="${h.cost||0}" style="width:90px"></td>
-      <td style="color:var(--text-secondary)">${total>0?((h.amount||0)/total*100).toFixed(1):'0.0'}%</td>
+      <td style="color:var(--text-secondary)">${total>0?((h._amount||0)/total*100).toFixed(1):'0.0'}%<br>${navTip}</td>
       <td><button class="btn btn-outline btn-sm" onclick="investRemove(${i})">🗑</button></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
+  const navDate=investNavDate();
   const el=document.getElementById('investContent');
   if(!el)return;
   el.innerHTML=`
     <div class="invest-summary">
-      <div class="invest-stat"><div class="v">${fmtMoney(total)}</div><div class="l">总资产（持仓市值）</div></div>
+      <div class="invest-stat"><div class="v">${fmtMoney(total)}</div><div class="l">总资产（实时市值）</div></div>
       <div class="invest-stat"><div class="v" style="color:${profit>=0?'#e74c3c':'#27ae60'}">${profit>=0?'+':''}${fmtMoney(profit)}</div><div class="l">累计收益（市值−成本）</div></div>
       <div class="invest-stat"><div class="v">${fmtMoney(Number(plan.daily)||0)}</div><div class="l">日均定投</div></div>
       <div class="invest-stat"><div class="v">${(plan.retireAge||55)}岁</div><div class="l">目标退休（距今 ${years} 年）</div></div>
     </div>
 
     <div class="card">
-      <div class="card-header"><div class="card-title"><span class="icon">🥧</span> 资产配置占比</div></div>
+      <div class="card-header"><div class="card-title"><span class="icon">🥧</span> 资产配置占比</div>${navDate?`<span style="font-size:12px;color:var(--text-secondary)">净值更新：${navDate}</span>`:''}</div>
       <div class="invest-donut-wrap">
         <div class="invest-donut" style="background:${donutBg}">
           <div class="center"><div style="font-size:11px;color:var(--text-secondary)">总资产</div><div style="font-size:16px;font-weight:700">${fmtMoney(total)}</div></div>
@@ -3214,11 +3273,13 @@ function renderInvest(){
 
     <div class="card">
       <div class="card-header"><div class="card-title"><span class="icon">📋</span> 持仓明细</div><button class="btn btn-primary btn-sm" onclick="investAdd()">＋ 添加</button></div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">填「基金代码」+「持有份额」后自动拉实时净值算市值；留空则用「市值」列手动填。代码可在基金详情页查看（以你账户为准）。</div>
       <table class="invest-table">
-        <thead><tr><th>名称</th><th>类别</th><th>市值</th><th>成本</th><th>占比</th><th></th></tr></thead>
+        <thead><tr><th>名称</th><th>类别</th><th>代码</th><th>份额</th><th>市值</th><th>成本</th><th>占比</th><th></th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
       <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="investSave()">💾 保存持仓</button>
+      <button class="btn btn-outline btn-block" style="margin-top:8px" onclick="renderInvest()">🔄 刷新净值</button>
       <div class="invest-note">建议配置参考：黄金 10% · 纯债 25% · 货基 5% · 宽基(A500/300) 30% · 科技/海外 30%。改完点保存即生效。</div>
     </div>
 
@@ -3239,12 +3300,14 @@ function renderInvest(){
   if(badge)badge.textContent=fmtMoney(total);
 }
 
-function investAdd(){const h=getHoldings();h.push({name:'',category:'',amount:0,cost:0});DB.set('invest_holdings',h);renderInvest();}
+function investAdd(){const h=getHoldings();h.push({name:'',category:'',code:'',shares:0,amount:0,cost:0});DB.set('invest_holdings',h);renderInvest();}
 function investRemove(i){const h=getHoldings();h.splice(i,1);DB.set('invest_holdings',h);renderInvest();}
 function investSave(){
   const h=getHoldings();
   document.querySelectorAll('.inv-name').forEach(inp=>{h[Number(inp.dataset.i)].name=inp.value.trim();});
   document.querySelectorAll('.inv-cat').forEach(inp=>{h[Number(inp.dataset.i)].category=inp.value.trim();});
+  document.querySelectorAll('.inv-code').forEach(inp=>{h[Number(inp.dataset.i)].code=inp.value.trim();});
+  document.querySelectorAll('.inv-shares').forEach(inp=>{h[Number(inp.dataset.i)].shares=Number(inp.value)||0;});
   document.querySelectorAll('.inv-amt').forEach(inp=>{h[Number(inp.dataset.i)].amount=Number(inp.value)||0;});
   document.querySelectorAll('.inv-cost').forEach(inp=>{h[Number(inp.dataset.i)].cost=Number(inp.value)||0;});
   DB.set('invest_holdings',h);
