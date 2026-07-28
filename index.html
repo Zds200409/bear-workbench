@@ -331,7 +331,8 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 .ielts-word{display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg-main);border-radius:var(--radius-sm)}
 .ielts-play{cursor:pointer;flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--primary-soft);color:var(--primary);border:none;font-size:13px;display:flex;align-items:center;justify-content:center}
 .ielts-play:active{transform:scale(.92)}
-.ielts-wtext{font-size:14px;font-weight:600;color:var(--text)}
+.ielts-wtext{font-size:14px;font-weight:600;color:var(--text);cursor:pointer;transition:color .15s}
+.ielts-wtext:hover{color:var(--primary)}
 .ielts-ipa{font-size:12px;color:var(--text-light);margin-left:6px}
 .ielts-pos{font-size:11px;color:var(--primary);background:var(--primary-soft);padding:1px 6px;border-radius:10px;margin-left:6px}
 .ielts-cn{flex:1;font-size:13px;color:var(--text-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2298,16 +2299,138 @@ const IELTS_WORDS=[
   {w:'culture',ipa:'/ˈkʌltʃə/',pos:'n.',cn:'文化'},
   {w:'decline',ipa:'/dɪˈklaɪn/',pos:'v./n.',cn:'下降，拒绝'},
   {w:'demonstrate',ipa:'/ˈdemənstreɪt/',pos:'v.',cn:'证明，演示'},
-  {w:'distribute',ipa:'/dɪˈstrɪbjuːt/',pos:'v.',cn:'分配，分发'}
+  {w:'distribute',ipa:'/dɪˈstrɪbjuːt/',pos:'v.',cn:'分配，分发'},
+  {w:'diverse',ipa:'/daɪˈvɜːs/',pos:'adj.',cn:'多样的，不同的'},
+  {w:'dominate',ipa:'/ˈdɒmɪneɪt/',pos:'v.',cn:'支配，主导'},
+  {w:'eliminate',ipa:'/ɪˈlɪmɪneɪt/',pos:'v.',cn:'消除，淘汰'},
+  {w:'emphasize',ipa:'/ˈemfəsaɪz/',pos:'v.',cn:'强调，着重'},
+  {w:'enhance',ipa:'/ɪnˈhɑːns/',pos:'v.',cn:'提高，增强'},
+  {w:'evaluate',ipa:'/ɪˈvæljueɪt/',pos:'v.',cn:'评价，评估'},
+  {w:'evident',ipa:'/ˈevɪdənt/',pos:'adj.',cn:'明显的，清楚的'},
+  {w:'evolve',ipa:'/ɪˈvɒlv/',pos:'v.',cn:'进化，逐步发展'},
+  {w:'expand',ipa:'/ɪkˈspænd/',pos:'v.',cn:'扩张，扩大'},
+  {w:'exploit',ipa:'/ɪkˈsplɔɪt/',pos:'v.',cn:'利用，开发'},
+  {w:'expose',ipa:'/ɪkˈspəʊz/',pos:'v.',cn:'暴露，使接触'},
+  {w:'facilitate',ipa:'/fəˈsɪlɪteɪt/',pos:'v.',cn:'促进，使便利'},
+  {w:'factor',ipa:'/ˈfæktə/',pos:'n.',cn:'因素，要素'},
+  {w:'feature',ipa:'/ˈfiːtʃə/',pos:'n./v.',cn:'特征；以…为特色'},
+  {w:'focus',ipa:'/ˈfəʊkəs/',pos:'v./n.',cn:'聚焦；重点'},
+  {w:'formal',ipa:'/ˈfɔːml/',pos:'adj.',cn:'正式的，形式的'},
+  {w:'function',ipa:'/ˈfʌŋkʃn/',pos:'n./v.',cn:'功能；起作用'},
+  {w:'fundamental',ipa:'/ˌfʌndəˈmentl/',pos:'adj.',cn:'基本的，根本的'},
+  {w:'generate',ipa:'/ˈdʒenəreɪt/',pos:'v.',cn:'产生，生成'},
+  {w:'global',ipa:'/ˈɡləʊbl/',pos:'adj.',cn:'全球的，整体的'},
+  {w:'highlight',ipa:'/ˈhaɪlaɪt/',pos:'v.',cn:'突出，强调'},
+  {w:'identify',ipa:'/aɪˈdentɪfaɪ/',pos:'v.',cn:'识别，确认'},
+  {w:'illustrate',ipa:'/ˈɪləstreɪt/',pos:'v.',cn:'说明，阐明'},
+  {w:'impact',ipa:'/ˈɪmpækt/',pos:'n./v.',cn:'影响，冲击'},
+  {w:'implement',ipa:'/ˈɪmplɪment/',pos:'v.',cn:'实施，执行'},
+  {w:'imply',ipa:'/ɪmˈplaɪ/',pos:'v.',cn:'暗示，意味着'},
+  {w:'impose',ipa:'/ɪmˈpəʊz/',pos:'v.',cn:'强加，施加'},
+  {w:'incentive',ipa:'/ɪnˈsentɪv/',pos:'n.',cn:'激励，刺激'},
+  {w:'indicate',ipa:'/ˈɪndɪkeɪt/',pos:'v.',cn:'表明，指示'},
+  {w:'individual',ipa:'/ˌɪndɪˈvɪdʒuəl/',pos:'adj./n.',cn:'个人的；个体'},
+  {w:'inevitable',ipa:'/ɪnˈevɪtəbl/',pos:'adj.',cn:'不可避免的'},
+  {w:'influence',ipa:'/ˈɪnfluəns/',pos:'n./v.',cn:'影响，作用'},
+  {w:'inhibit',ipa:'/ɪnˈhɪbɪt/',pos:'v.',cn:'抑制，阻碍'},
+  {w:'initial',ipa:'/ɪˈnɪʃl/',pos:'adj.',cn:'最初的，开始的'},
+  {w:'innovate',ipa:'/ˈɪnəveɪt/',pos:'v.',cn:'创新，革新'},
+  {w:'insight',ipa:'/ˈɪnsaɪt/',pos:'n.',cn:'洞察，深刻理解'},
+  {w:'institute',ipa:'/ˈɪnstɪtjuːt/',pos:'n.',cn:'机构，学院'},
+  {w:'interpret',ipa:'/ɪnˈtɜːprɪt/',pos:'v.',cn:'解释，口译'},
+  {w:'involve',ipa:'/ɪnˈvɒlv/',pos:'v.',cn:'涉及，包含'},
+  {w:'justify',ipa:'/ˈdʒʌstɪfaɪ/',pos:'v.',cn:'证明…正当'},
+  {w:'legitimate',ipa:'/lɪˈdʒɪtɪmət/',pos:'adj.',cn:'合法的，合理的'},
+  {w:'maintain',ipa:'/meɪnˈteɪn/',pos:'v.',cn:'维持，保养'},
+  {w:'manipulate',ipa:'/məˈnɪpjuleɪt/',pos:'v.',cn:'操纵，操作'},
+  {w:'maximize',ipa:'/ˈmæksɪmaɪz/',pos:'v.',cn:'最大化'},
+  {w:'minimize',ipa:'/ˈmɪnɪmaɪz/',pos:'v.',cn:'最小化'},
+  {w:'mitigate',ipa:'/ˈmɪtɪɡeɪt/',pos:'v.',cn:'减轻，缓和'},
+  {w:'modify',ipa:'/ˈmɒdɪfaɪ/',pos:'v.',cn:'修改，调整'},
+  {w:'monitor',ipa:'/ˈmɒnɪtə/',pos:'v./n.',cn:'监控；监视器'},
+  {w:'notion',ipa:'/ˈnəʊʃn/',pos:'n.',cn:'概念，观念'},
+  {w:'objective',ipa:'/əbˈdʒektɪv/',pos:'adj./n.',cn:'客观的；目标'},
+  {w:'obtain',ipa:'/əbˈteɪn/',pos:'v.',cn:'获得，得到'},
+  {w:'obvious',ipa:'/ˈɒbviəs/',pos:'adj.',cn:'明显的'},
+  {w:'obstacle',ipa:'/ˈɒbstəkl/',pos:'n.',cn:'障碍，妨碍'},
+  {w:'ongoing',ipa:'/ˈɒnɡəʊɪŋ/',pos:'adj.',cn:'持续进行的'},
+  {w:'option',ipa:'/ˈɒpʃn/',pos:'n.',cn:'选择，选项'},
+  {w:'origin',ipa:'/ˈɒrɪdʒɪn/',pos:'n.',cn:'起源，来源'},
+  {w:'outcome',ipa:'/ˈaʊtkʌm/',pos:'n.',cn:'结果，成果'},
+  {w:'overall',ipa:'/ˌəʊvərˈɔːl/',pos:'adj./adv.',cn:'总体的；总体上'},
+  {w:'parallel',ipa:'/ˈpærəlel/',pos:'adj./n.',cn:'平行的；类似'},
+  {w:'participant',ipa:'/pɑːˈtɪsɪpənt/',pos:'n.',cn:'参与者'},
+  {w:'perception',ipa:'/pəˈsepʃn/',pos:'n.',cn:'感知，看法'},
+  {w:'persist',ipa:'/pəˈsɪst/',pos:'v.',cn:'坚持，持续'},
+  {w:'phenomenon',ipa:'/fəˈnɒmɪnən/',pos:'n.',cn:'现象'},
+  {w:'policy',ipa:'/ˈpɒləsi/',pos:'n.',cn:'政策，方针'},
+  {w:'potential',ipa:'/pəˈtenʃl/',pos:'adj./n.',cn:'潜在的；潜力'},
+  {w:'precise',ipa:'/prɪˈsaɪs/',pos:'adj.',cn:'精确的，准确的'},
+  {w:'predict',ipa:'/prɪˈdɪkt/',pos:'v.',cn:'预测，预言'},
+  {w:'predominate',ipa:'/prɪˈdɒmɪneɪt/',pos:'v.',cn:'占主导，占多数'},
+  {w:'preliminary',ipa:'/prɪˈlɪmɪnəri/',pos:'adj.',cn:'初步的，预备的'},
+  {w:'principle',ipa:'/ˈprɪnsəpl/',pos:'n.',cn:'原则，原理'},
+  {w:'priority',ipa:'/praɪˈɒrəti/',pos:'n.',cn:'优先，重点'},
+  {w:'proceed',ipa:'/prəˈsiːd/',pos:'v.',cn:'继续进行'},
+  {w:'process',ipa:'/ˈprəʊses/',pos:'n./v.',cn:'过程；处理'},
+  {w:'promote',ipa:'/prəˈməʊt/',pos:'v.',cn:'促进，提升'},
+  {w:'proportion',ipa:'/prəˈpɔːʃn/',pos:'n.',cn:'比例，部分'},
+  {w:'propose',ipa:'/prəˈpəʊz/',pos:'v.',cn:'提议，建议'},
+  {w:'prospect',ipa:'/ˈprɒspekt/',pos:'n.',cn:'前景，展望'},
+  {w:'protocol',ipa:'/ˈprəʊtəkɒl/',pos:'n.',cn:'协议，规程'},
+  {w:'publish',ipa:'/ˈpʌblɪʃ/',pos:'v.',cn:'出版，发布'},
+  {w:'pursue',ipa:'/pəˈsjuː/',pos:'v.',cn:'追求，从事'},
+  {w:'quantify',ipa:'/ˈkwɒntɪfaɪ/',pos:'v.',cn:'量化，用数量表示'},
+  {w:'radical',ipa:'/ˈrædɪkl/',pos:'adj.',cn:'根本的，激进的'},
+  {w:'random',ipa:'/ˈrændəm/',pos:'adj.',cn:'随机的，随意的'},
+  {w:'rational',ipa:'/ˈræʃnəl/',pos:'adj.',cn:'理性的，合理的'},
+  {w:'react',ipa:'/riˈækt/',pos:'v.',cn:'反应，回应'},
+  {w:'recover',ipa:'/rɪˈkʌvə/',pos:'v.',cn:'恢复，找回'},
+  {w:'reinforce',ipa:'/ˌriːɪnˈfɔːs/',pos:'v.',cn:'加强，强化'},
+  {w:'relate',ipa:'/rɪˈleɪt/',pos:'v.',cn:'关联，叙述'},
+  {w:'relevant',ipa:'/ˈreləvənt/',pos:'adj.',cn:'相关的，切题的'},
+  {w:'reliable',ipa:'/rɪˈlaɪəbl/',pos:'adj.',cn:'可靠的，可信赖的'},
+  {w:'remain',ipa:'/rɪˈmeɪn/',pos:'v.',cn:'保持，剩余'},
+  {w:'remove',ipa:'/rɪˈmuːv/',pos:'v.',cn:'移除，去掉'},
+  {w:'replace',ipa:'/rɪˈpleɪs/',pos:'v.',cn:'取代，替换'},
+  {w:'require',ipa:'/rɪˈkwaɪə/',pos:'v.',cn:'需要，要求'},
+  {w:'reserve',ipa:'/rɪˈzɜːv/',pos:'v.',cn:'保留，预定'},
+  {w:'resolve',ipa:'/rɪˈzɒlv/',pos:'v.',cn:'解决，决心'},
+  {w:'resource',ipa:'/rɪˈsɔːs/',pos:'n.',cn:'资源，财力'},
+  {w:'respond',ipa:'/rɪˈspɒnd/',pos:'v.',cn:'回应，反应'},
+  {w:'restore',ipa:'/rɪˈstɔː/',pos:'v.',cn:'恢复，修复'},
+  {w:'restrict',ipa:'/rɪˈstrɪkt/',pos:'v.',cn:'限制，约束'}
 ];
 
+// 按日期分窗轮换：每天自动取不同 50 词（词库 150，约 3 天一轮不重复）
+function ieltsDayIndex(){
+  const base=Date.UTC(2026,6,28); // 基准日 2026-07-28
+  const now=Date.UTC(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
+  let d=Math.floor((now-base)/86400000); if(d<0)d=0;
+  return d;
+}
+function todayIeltsWords(){
+  const d=ieltsDayIndex(); const n=IELTS_WORDS.length; const out=[];
+  for(let k=0;k<50;k++) out.push(IELTS_WORDS[(d*50+k)%n]);
+  return out;
+}
+
 // 语音朗读（优先英式发音，贴合雅思）
+function pickEnGBVoice(){
+  try{
+    const vs=window.speechSynthesis.getVoices();
+    return vs.find(v=>/^en[-_]GB/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;
+  }catch(e){return null;}
+}
 function speakWord(text){
   if(!('speechSynthesis' in window)){alert('当前浏览器不支持语音朗读，请换 Chrome/Edge/Safari');return;}
-  speechSynthesis.cancel();
+  const ss=window.speechSynthesis;
+  ss.cancel();
   const u=new SpeechSynthesisUtterance(text);
   u.lang='en-GB';u.rate=0.85;
-  speechSynthesis.speak(u);
+  const v=pickEnGBVoice();if(v)u.voice=v;
+  // Chrome 首句可能不发声：延迟一拍，等语音引擎就绪
+  setTimeout(()=>ss.speak(u),60);
 }
 // 朗读全部 50 词（链式播放，避免队列丢音）
 function speakAllIelts(){
@@ -2315,19 +2438,20 @@ function speakAllIelts(){
   speechSynthesis.cancel();
   let i=0;
   const playNext=()=>{
-    if(i>=IELTS_WORDS.length)return;
-    const u=new SpeechSynthesisUtterance(IELTS_WORDS[i++].w);
+    if(i>=todayIeltsWords().length)return;
+    const u=new SpeechSynthesisUtterance(todayIeltsWords()[i++].w);
     u.lang='en-GB';u.rate=0.85;
+    const v=pickEnGBVoice();if(v)u.voice=v;
     u.onend=playNext;
     speechSynthesis.speak(u);
   };
   playNext();
 }
 // 标记「已掌握」（按天记录，第二天清零重来）
-function toggleIeltsMaster(idx){
+function toggleIeltsMaster(word){
   const key='ielts_learned_'+dateKey(new Date());
   const map=DB.get(key,{});
-  if(map[idx])delete map[idx];else map[idx]=true;
+  if(map[word])delete map[word];else map[word]=true;
   DB.set(key,map);
   renderEnglishStudy();
 }
@@ -2338,16 +2462,17 @@ function ieltsLearnedCount(){
 
 function renderEnglishStudy(){
   const badge=document.getElementById('studyDayBadge');
-  if(badge)badge.textContent='雅思 · 每日50词';
+  const dayNo=ieltsDayIndex()+1;
+  if(badge)badge.textContent='雅思 · 第'+dayNo+'天 · 每日50词';
   const learned=ieltsLearnedCount();
   const learnedMap=DB.get('ielts_learned_'+dateKey(new Date()),{});
-  const wordsHtml=IELTS_WORDS.map((it,i)=>{
-    const done=!!learnedMap[i];
+  const wordsHtml=todayIeltsWords().map((it)=>{
+    const done=!!learnedMap[it.w];
     return `<div class="ielts-word">
       <button class="ielts-play" onclick="speakWord('${it.w}')" title="朗读发音">🔊</button>
-      <span class="ielts-wtext">${it.w}</span><span class="ielts-ipa">${it.ipa}</span><span class="ielts-pos">${it.pos}</span>
+      <span class="ielts-wtext" onclick="speakWord('${it.w}')" title="点击朗读发音">${it.w}</span><span class="ielts-ipa">${it.ipa}</span><span class="ielts-pos">${it.pos}</span>
       <span class="ielts-cn">${it.cn}</span>
-      <button class="ielts-master ${done?'done':''}" onclick="toggleIeltsMaster(${i})">${done?'✓ 已掌握':'掌握'}</button>
+      <button class="ielts-master ${done?'done':''}" onclick="toggleIeltsMaster('${it.w}')">${done?'✓ 已掌握':'掌握'}</button>
     </div>`;
   }).join('');
 
@@ -2374,7 +2499,7 @@ function renderEnglishStudy(){
     </div>
     <div class="study-block study-tip">
       <div class="study-label">💡 学习提示</div>
-      <div>每天 50 词：先点 🔊 跟读 2 遍 → 盖住释义自测 → 标记「已掌握」；错词第二天重来。IELTS 用英式发音，重点练听辨与拼写。</div>
+      <div>每天自动更新 50 个新词（今天第 ${dayNo} 天）：先点 🔊 跟读 2 遍 → 盖住释义自测 → 标记「已掌握」；明日自动换新一批。IELTS 用英式发音，重点练听辨与拼写。</div>
     </div>`;
 }
 
