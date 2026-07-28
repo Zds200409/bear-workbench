@@ -1,6 +1,11 @@
 # 项目私有数据，不推送到仓库
 .workbuddy/
 
+# 后端密钥与本地状态（含微信 AppSecret，绝不提交）
+server/.env
+server/node_modules/
+server/schedule.json
+
 # 系统/编辑器
 .DS_Store
 Thumbs.db

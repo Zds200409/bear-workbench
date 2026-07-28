@@ -84,6 +84,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
 /* ===== Buttons ===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .25s;outline:none}
 .btn-primary{background:var(--primary);color:#fff}
+.btn-success{background:#2e9e5b;color:#fff;border-color:#2e9e5b}
+.btn-success:disabled{opacity:.6;cursor:not-allowed}
 .btn-primary:active{transform:scale(.96);background:var(--primary-dark)}
 .btn-outline{background:transparent;color:var(--primary);border:1.5px solid var(--primary)}
 .btn-sm{padding:6px 14px;font-size:12px;border-radius:10px}
@@ -372,12 +374,22 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           <div class="card-title"><span class="icon">✍️</span> 内容生成</div>
         </div>
         <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">基于你的赛道 + 今日真实热点，自动生成可发布的公众号文章草稿。</p>
-        <div class="input-group" style="margin-bottom:14px">
+        <div class="input-group" style="margin-bottom:12px">
           <label class="input-label">🎯 你的赛道 / 领域</label>
           <input class="input" id="wechatNiche" placeholder="如：个人成长 / 理财 / 职场 / 育儿..." style="font-size:13px" onchange="DB.set('wechat_niche',this.value.trim())">
         </div>
+        <div class="input-group" style="margin-bottom:12px">
+          <label class="input-label">📄 文章标题（发布到公众号的标题）</label>
+          <input class="input" id="wechatTitle" placeholder="留空则自动取草稿首行" style="font-size:13px">
+        </div>
+        <div class="input-group" style="margin-bottom:14px">
+          <label class="input-label">🖼️ 封面图（公众号发布必填）</label>
+          <input type="file" id="wechatCover" accept="image/*" class="input" style="font-size:13px;padding:6px" onchange="handleCoverUpload(event)">
+          <div id="wechatCoverStatus" style="font-size:11px;color:var(--text-secondary);margin-top:4px"></div>
+        </div>
         <div class="btn-group">
           <button class="btn btn-primary btn-sm" id="genWechatBtn" onclick="generateWechatContent()">✨ 立即生成</button>
+          <button class="btn btn-success btn-sm" onclick="publishToWechat()">🚀 推送到公众号</button>
           <button class="btn btn-outline btn-sm" onclick="saveWechatDraft()">💾 存入草稿</button>
           <button class="btn btn-outline btn-sm" onclick="copyWechatContent()">📋 复制</button>
         </div>
@@ -390,16 +402,17 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         </div>
         <div class="setting-item">
           <div class="setting-info">
-            <div class="setting-name">生成并自动发布时间</div>
-            <div class="setting-desc">设定后将在指定时间自动执行</div>
+            <div class="setting-name">定时自动发布时间</div>
+            <div class="setting-desc">每天该时间由本地后端自动发布（需 node server/server.js 保持运行）</div>
           </div>
-          <input type="time" class="input" id="autoPublishTime" value="09:30" style="width:100px;padding:6px 10px;font-size:13px">
+          <input type="time" class="input" id="autoPublishTime" value="09:30" style="width:100px;padding:6px 10px;font-size:13px" onchange="saveWechatSchedule()">
         </div>
         <div class="setting-item">
           <div class="setting-info">
             <div class="setting-name">自动发布开关</div>
+            <div class="setting-desc">开启后每天定时发当前草稿（需先传封面图）</div>
           </div>
-          <div class="toggle-switch on" id="autoPublishToggle" onclick="toggleAutoPublish(this)"></div>
+          <div class="toggle-switch on" id="autoPublishToggle" onclick="saveWechatSchedule(this)"></div>
         </div>
         <div class="input-group" style="margin-top:14px">
           <label class="input-label">📝 备注</label>
@@ -1705,6 +1718,108 @@ async function generateWechatContent(){
   DB.set('wechat_draft',draft);
 }
 
+// ==================== 公众号真实发布（调本地后端 /api/publish） ====================
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function mdToHtml(md){
+  const lines=(md||'').split('\n');
+  let html='<section style="font-size:16px;line-height:1.8;color:#333;padding:4px 2px;">';
+  for(let raw of lines){
+    let line=raw.trim();
+    if(!line)continue;
+    const isBracket=/^【.+】$/.test(line);
+    if(isBracket){
+      html+=`<h2 style="font-size:19px;font-weight:700;margin:22px 0 10px;color:#1a1a1a;">${escHtml(line)}</h2>`;
+      continue;
+    }
+    if(line.startsWith('# ')){html+=`<h2 style="font-size:20px;font-weight:700;margin:18px 0 8px;">${escHtml(line.slice(2))}</h2>`;continue;}
+    if(line.startsWith('## ')){html+=`<h3 style="font-size:17px;font-weight:700;margin:14px 0 6px;">${escHtml(line.slice(3))}</h3>`;continue;}
+    let t=escHtml(line).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    html+=`<p style="margin:8px 0;">${t}</p>`;
+  }
+  html+='</section>';
+  return html;
+}
+function handleCoverUpload(e){
+  const file=e.target.files[0];
+  const status=document.getElementById('wechatCoverStatus');
+  if(!file){status.textContent='';return;}
+  if(file.size>2*1024*1024){status.textContent='⚠️ 封面需小于 2MB';status.style.color='#e74c3c';return;}
+  const reader=new FileReader();
+  reader.onload=function(){
+    DB.set('wechat_cover',reader.result);
+    status.textContent='✅ 封面已选：'+file.name;
+    status.style.color='#2e7d32';
+  };
+  reader.readAsDataURL(file);
+}
+async function publishToWechat(){
+  const draftEl=document.getElementById('wechatDraft');
+  const draft=(draftEl.value||'').trim();
+  if(!draft){alert('还没有内容，先点「✨ 立即生成」。');return;}
+  const cover=DB.get('wechat_cover','');
+  if(!cover){alert('⚠️ 发布到公众号必须上传封面图。\n请在上方「封面图」选择一张图片。');return;}
+  const titleInput=document.getElementById('wechatTitle');
+  const title=(titleInput&&titleInput.value.trim())||(draft.split('\n').find(l=>l.trim())||'未命名文章');
+  const niche=DB.get('wechat_niche','')||'';
+  const btn=document.querySelector('[onclick="publishToWechat()"]');
+  if(btn){btn.disabled=true;btn.textContent='⏳ 发布中...';}
+  try{
+    const resp=await fetch('/api/publish',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title,author:niche,digest:'',contentHtml:mdToHtml(draft),coverBase64:cover})
+    });
+    const j=await resp.json();
+    if(btn){btn.disabled=false;btn.textContent='🚀 推送到公众号';}
+    if(j.ok){
+      alert('✅ 已提交发布！\n发布ID：'+j.publish_id+'\n公众号后台「发表记录」可查看，微信通常几分钟内审核生效。');
+    }else{
+      alert('❌ 发布失败：'+j.error);
+    }
+  }catch(err){
+    if(btn){btn.disabled=false;btn.textContent='🚀 推送到公众号';}
+    alert('❌ 无法连接后端（'+err.message+'）。\n请确认：1) 已运行 node server/server.js；2) 用 http://localhost:3000 打开本页。');
+  }
+}
+async function saveWechatSchedule(toggleEl){
+  if(toggleEl)toggleEl.classList.toggle('on');
+  const toggle=document.getElementById('autoPublishToggle');
+  const timeEl=document.getElementById('autoPublishTime');
+  const enabled=toggle.classList.contains('on');
+  const time=timeEl.value||'09:30';
+  const draft=(document.getElementById('wechatDraft').value||'').trim();
+  const cover=DB.get('wechat_cover','');
+  if(enabled){
+    if(!draft){alert('⚠️ 先生成或写好草稿，再开启定时发布。');if(toggleEl)toggleEl.classList.toggle('on');return;}
+    if(!cover){alert('⚠️ 定时发布也需要封面图，请先在上方的「封面图」选择图片。');if(toggleEl)toggleEl.classList.toggle('on');return;}
+  }
+  const title=(document.getElementById('wechatTitle').value.trim())||(draft.split('\n').find(l=>l.trim())||'未命名文章');
+  const niche=DB.get('wechat_niche','')||'';
+  const payload=enabled?{title,author:niche,digest:'',contentHtml:mdToHtml(draft),coverBase64:cover}:null;
+  try{
+    const resp=await fetch('/api/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled,time,payload})});
+    const j=await resp.json();
+    if(j.ok){
+      if(enabled)alert('✅ 已设为每天 '+time+' 自动发布（需后端 node server/server.js 保持运行）。');
+    }else{alert('❌ 保存失败：'+j.error);}
+  }catch(err){
+    alert('❌ 无法连接后端：'+err.message+'\n请用本地后端地址打开本页。');
+    if(toggleEl)toggleEl.classList.toggle('on');
+  }
+}
+async function loadWechatSchedule(){
+  try{
+    const resp=await fetch('/api/schedule');
+    const j=await resp.json();
+    if(j.ok&&j.schedule){
+      const t=document.getElementById('autoPublishToggle');
+      const timeEl=document.getElementById('autoPublishTime');
+      if(j.schedule.enabled&&t&&!t.classList.contains('on'))t.classList.add('on');
+      if(timeEl&&j.schedule.time)timeEl.value=j.schedule.time;
+    }
+  }catch(e){/* 后端没开就忽略 */}
+}
+
 // 基于赛道 + 真实热点，生成结构化公众号文章草稿
 function buildWechatArticle(niche,topic,topics){
   const d=new Date();
@@ -2707,6 +2822,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(wn){wn.value=DB.get('wechat_niche','')||'';wn.onchange=function(){DB.set('wechat_niche',this.value.trim())};}
   const wd=document.getElementById('wechatDraft');
   if(wd){wd.value=DB.get('wechat_draft','')||'';wd.onblur=function(){DB.set('wechat_draft',this.value)};}
+  // 公众号：回载定时发布状态（后端未开则忽略）
+  loadWechatSchedule();
 });
 </script>
 </body>
