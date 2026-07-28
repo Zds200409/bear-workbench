@@ -361,6 +361,13 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 .invest-bar{height:10px;background:var(--border,#eee);border-radius:6px;overflow:hidden;margin-top:6px}
 .invest-bar > i{display:block;height:100%;background:var(--primary)}
 .invest-note{font-size:12px;color:var(--text-secondary);line-height:1.6;margin-top:8px}
+.funnel-top3{list-style:none;padding:0;margin:8px 0}
+.funnel-top3 li{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border,#eee);font-size:14px;align-items:baseline}
+.funnel-top3 .rk{color:var(--primary);font-weight:700;min-width:18px}
+.funnel-src{font-size:12px;padding:2px 8px;border-radius:10px}
+.funnel-src.real{background:#e8f5e9;color:#2e7d32}
+.funnel-src.fb{background:#fff3cd;color:#8a6d3b}
+.funnel-draft{white-space:pre-wrap;font-size:13px;line-height:1.7;background:var(--bg,#f5f6fa);border-radius:10px;padding:12px;max-height:240px;overflow:auto}
 </style>
 </head>
 <body>
@@ -421,6 +428,12 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         <div class="xhs-section-title">🎁 二、好物分享博主</div>
         <div class="xhs-section-desc">每日推送最新热点爆款好物分享内容，结合趋势选品</div>
         <div id="xhsProductCard"></div>
+      </div>
+
+      <!-- 飞轮草稿 -->
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="icon">📝</span> 我的草稿（飞轮生成）</div></div>
+        <div id="xhsDraftBox"></div>
       </div>
     </section>
 
@@ -591,6 +604,14 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         <span class="page-badge" id="investBadge"></span>
       </div>
       <div id="investContent"></div>
+    </section>
+
+    <!-- ========== 内容飞轮 ========== -->
+    <section class="page" id="page-funnel" data-page="funnel">
+      <div class="page-header">
+        <h1 class="page-title"><span class="title-icon">🚀</span> 内容飞轮</h1>
+      </div>
+      <div id="funnelContent"></div>
     </section>
 
     <!-- ========== 饮食·打卡 ========== -->
@@ -1192,6 +1213,7 @@ const NAV_ITEMS = [
   {id:'xhs',icon:'📕',label:'小红书博主'},
   {id:'wechat',icon:'📮',label:'公众号发布'},
   {id:'news',icon:'🔥',label:'每日热点'},
+  {id:'funnel',icon:'🚀',label:'内容飞轮'},
   {id:'diet',icon:'🍱',label:'饮食·打卡'},
   {id:'english',icon:'🔤',label:'英语打卡'},
   {id:'ai',icon:'🤖',label:'学AI'},
@@ -1224,6 +1246,7 @@ function switchPage(pageId){
   if(pageId==='plan')renderCalendar();
   if(pageId==='xhs')renderXhsPage();
   if(pageId==='news')renderNews();
+  if(pageId==='funnel')renderFunnel();
   if(pageId==='english')renderEnglish();
   if(pageId==='diet')renderDiet();
   if(pageId==='reading')renderReading();
@@ -1603,6 +1626,8 @@ function renderXhsPage(){
   renderXhsMaterialCard();
   // Render product card
   renderXhsProductCard();
+  // Render 飞轮生成的草稿
+  renderXhsDraftBox();
 }
 
 function renderXhsMaterialCard(){
@@ -3162,6 +3187,119 @@ function investSavePlan(){
   DB.set('invest_plan',plan);
   renderInvest();
   alert('✅ 计划已保存');
+}
+
+// ==================== Content Funnel (热点→双平台创作飞轮) ====================
+function getTodayHotForFunnel(){
+  const cached=DB.get('cached_news',{});
+  if(DB.get('cached_news_date','')!==todayKey())return null;
+  const list=(cached.dy&&cached.dy.length)?cached.dy:(cached.gzh&&cached.gzh.length?cached.gzh:[]);
+  return list.length?list:null;
+}
+function isThisWeek(dateStr){
+  if(!dateStr)return false;
+  const d=new Date(dateStr);const now=new Date();
+  const day=now.getDay()||7;
+  const monday=new Date(now);monday.setDate(now.getDate()-day+1);monday.setHours(0,0,0,0);
+  return d>=monday;
+}
+function buildXhsDraft(niche,topic,topics){
+  const t2=topics[1]||'';
+  const tag='#'+niche+' #热点追踪 #'+(topic.replace(/[^一-龥a-zA-Z0-9]/g,'')||'今日热点')+(t2?' #'+t2.replace(/[^一-龥a-zA-Z0-9]/g,''):'');
+  return '🔥 '+topic+' 冲上热搜！普通人怎么借势？\n\n今天「'+topic+'」刷屏，作为关注「'+niche+'」的人，我整理了 3 个能立刻上手的切入点👇\n\n1️⃣ 先看清它和自己的关系：别只吃瓜，想想会影响你哪部分生活或钱包。\n2️⃣ 把热点变成内容资产：写一条观点、录一段口播，借流量涨粉。\n3️⃣ 落到行动：挑一个最小的动作今天就开始，别让热度白白溜走。\n\n💡 顺带，今天「'+t2+'」也在榜，可以作为下一篇选题。\n\n'+tag+'\n👉 想看更多拆解，点个关注不迷路～';
+}
+async function generateFunnel(){
+  const hot=getTodayHotForFunnel();
+  if(!hot||!hot.length){alert('⚠️ 今日热点还没加载。\n请先到「🔥 每日热点」点 🔄 刷新一次（拉取真实热榜），再回来创作。');return;}
+  const topics=hot.slice(0,5).map(n=>n.title).filter(Boolean);
+  const top3=hot.slice(0,3).map(n=>n.title).filter(Boolean);
+  const niche=DB.get('wechat_niche','')||'个人成长';
+  const cfg=getAiConfig();
+  const btn=document.getElementById('funnelGenBtn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ 生成中...';}
+  const d=new Date();
+  const todayStr=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric'});
+  const week=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  let wechatDraft,xhsDraft;
+  if(cfg.apiKey){
+    try{
+      const wsys='你是一位擅长「'+niche+'」领域的公众号爆款写手，文风口语化、像真人写的，有观点、有个人经历感，杜绝 AI 腔和说教。';
+      const wuser='今天是'+todayStr+'（'+week+'）。下面是今日真实热榜 Top'+topics.length+'：\n'+topics.map((t,i)=>(i+1)+'. '+t).join('\n')+'\n\n请基于其中最具话题度的事件，写一篇可直接发布的公众号文章草稿，要求：\n1. 3 个吸睛标题候选\n2. 一段导语（120字内）\n3. 正文 3 小节，每节小标题+约200字，结合「'+niche+'」视角\n4. 1 句金句\n5. 结尾引导点「在看」+评论\n6. 末尾附下篇选题\n直接输出成稿，不要解释。';
+      wechatDraft=await callLLM(wuser,wsys);
+    }catch(e){ wechatDraft=buildWechatArticle(niche,top3[0],topics); }
+    try{
+      const xsys='你是一位爆款小红书文案写手，把热点写成让人想点赞收藏的笔记。文风：大量 emoji、口语化、有共鸣、干货清单、结尾引导关注。';
+      const xuser='今天是'+todayStr+'。今日真实热榜 Top'+topics.length+'：\n'+topics.map((t,i)=>(i+1)+'. '+t).join('\n')+'\n\n请基于最具话题度的事件，写一篇小红书笔记文案：\n1. 吸睛标题（带 emoji）\n2. 开头 2 句钩子\n3. 3 个带 emoji 的干货要点\n4. 结尾引导点赞收藏关注\n5. 末尾 3-5 个 #话题标签（含「'+niche+'」相关）\n直接输出文案，不要解释。';
+      xhsDraft=await callLLM(xuser,xsys);
+    }catch(e){ xhsDraft=buildXhsDraft(niche,top3[0],topics); }
+  }else{
+    wechatDraft=buildWechatArticle(niche,top3[0],topics);
+    xhsDraft=buildXhsDraft(niche,top3[0],topics);
+  }
+  const wd=document.getElementById('wechatDraft');
+  if(wd)wd.value=wechatDraft;
+  DB.set('wechat_draft',wechatDraft);
+  DB.set('xhs_draft',xhsDraft);
+  const log=DB.get('funnel_log',[]);
+  log.unshift({date:todayKey(),wechatTitle:(wechatDraft.split('\n').find(l=>l.trim())||'公众号文章').slice(0,40),xhsTitle:(xhsDraft.split('\n').find(l=>l.trim())||'小红书文案').slice(0,40)});
+  DB.set('funnel_log',log.slice(0,50));
+  if(btn){btn.disabled=false;btn.textContent='✨ 一键生成（公众号+小红书）';}
+  renderFunnel();
+  alert('✅ 今日双平台内容已生成：\n• 公众号长文 → 已存入「公众号发布」草稿（可编辑/推送）\n• 小红书文案 → 已存入「小红书博主-我的草稿」\n（未填 AI Key 为本地模板；填 DeepSeek/Kimi Key 即升级真·AI 原创）');
+}
+function renderFunnel(){
+  const hot=getTodayHotForFunnel();
+  const niche=DB.get('wechat_niche','')||'';
+  const wd=DB.get('wechat_draft','');
+  const xd=DB.get('xhs_draft','');
+  const log=DB.get('funnel_log',[]);
+  let top3Html;
+  if(hot){
+    const isReal=hot[0]&&hot[0]._real;
+    top3Html=`<ul class="funnel-top3">${hot.slice(0,3).map((n,i)=>`<li><span class="rk">${i+1}</span><span>${escAttr(n.title)}</span></li>`).join('')}</ul><div style="margin-top:6px"><span class="funnel-src ${isReal?'real':'fb'}">${isReal?'✅ 实时热榜':'⚠️ 模拟数据'}</span></div>`;
+  }else{
+    top3Html='<div class="invest-note">今日热点未加载。请先到「🔥 每日热点」点 🔄 刷新一次（拉取真实热榜），再回来创作。</div>';
+  }
+  const xhsCard=xd?`<div class="funnel-draft">${escHtml(xd)}</div>`:'<div class="invest-note">尚未生成小红书文案，点上方按钮生成。</div>';
+  const wxCard=wd?`<div class="funnel-draft">${escHtml(wd.slice(0,600))}${wd.length>600?'…（完整见「公众号发布」草稿）':''}</div>`:'<div class="invest-note">尚未生成公众号内容。</div>';
+  const weekCount=log.filter(l=>isThisWeek(l.date)).length;
+  const logHtml=log.length?`<div style="font-size:13px">${log.slice(0,5).map(l=>`<div style="padding:6px 0;border-bottom:1px solid var(--border,#eee)">📅 ${l.date} · 公众号《${escAttr(l.wechatTitle||'')}》+ 小红书《${escAttr(l.xhsTitle||'')}》</div>`).join('')}</div>`:'<div class="invest-note">还没有创作记录。</div>';
+  const el=document.getElementById('funnelContent');
+  if(!el)return;
+  el.innerHTML=`
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="icon">🔥</span> 今日热点 Top3</div></div>
+      ${top3Html}
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="icon">🚀</span> 一键创作今日内容</div></div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">基于热点 + 赛道「${niche||'未设置(默认个人成长)'}」，一次生成「公众号长文 + 小红书文案」双平台草稿。</div>
+      <button class="btn btn-primary btn-block" id="funnelGenBtn" onclick="generateFunnel()">✨ 一键生成（公众号+小红书）</button>
+      <div class="invest-note">未填 AI Key → 用本地模板；在「设置→AI生成设置」填 DeepSeek/Kimi Key 升级真·AI。赛道在「公众号发布」页设置。</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="icon">📮</span> 公众号长文（草稿）</div><button class="btn btn-outline btn-sm" onclick="switchPage('wechat')">去编辑/发布</button></div>
+      ${wxCard}
+      <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="publishToWechat()" ${wd?'':'disabled'}>🚀 推送到公众号${wd?'':'（先生成）'}</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="icon">📕</span> 小红书文案（草稿）</div><button class="btn btn-outline btn-sm" onclick="copyXhsText(DB.get('xhs_draft',''))">📋 复制</button></div>
+      ${xhsCard}
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title"><span class="icon">📜</span> 创作记录</div><span class="page-badge">本周 ${weekCount} 篇</span></div>
+      ${logHtml}
+    </div>`;
+}
+function renderXhsDraftBox(){
+  const box=document.getElementById('xhsDraftBox');
+  if(!box)return;
+  const d=DB.get('xhs_draft','');
+  if(d){
+    box.innerHTML=`<div class="funnel-draft">${escHtml(d)}</div><div class="xhs-action-row" style="margin-top:8px"><button class="btn btn-sm btn-outline" onclick="copyXhsText(DB.get('xhs_draft',''))">📋 复制文案</button></div>`;
+  }else{
+    box.innerHTML='<div class="invest-note">飞轮生成的文案会出现在这里。去「🚀 内容飞轮」一键创作今日内容。</div>';
+  }
 }
 
 // ==================== AI Learning Module ====================
