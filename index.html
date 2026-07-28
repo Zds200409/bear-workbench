@@ -312,6 +312,19 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 .wellness-exercise-card{background:var(--bg-main);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
 .wellness-exercise-name{font-size:14px;font-weight:700}
 .wellness-exercise-detail{font-size:12px;color:var(--text-secondary);line-height:1.6;margin-top:4px}
+/* 英语·每日学习 */
+.card-badge{font-size:11px;font-weight:600;color:var(--primary);background:var(--primary-soft);padding:2px 8px;border-radius:20px}
+.study-block{padding:10px 0;border-bottom:1px dashed var(--border, #eee)}
+.study-block:last-child{border-bottom:none}
+.study-label{font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:6px}
+.study-word{font-size:18px;font-weight:700;color:var(--text)}
+.study-phon{font-size:13px;font-weight:400;color:var(--text-light);margin-left:8px}
+.study-mean{font-size:13px;color:var(--primary);font-weight:600;margin-top:2px}
+.study-eg{font-size:12px;color:var(--text-secondary);margin-top:4px;font-style:italic}
+.study-sentence{font-size:15px;font-weight:600;color:var(--text);line-height:1.5}
+.study-trans{font-size:12px;color:var(--text-secondary);margin-top:4px}
+.study-tip{background:var(--primary-soft);border-radius:var(--radius-sm);padding:10px 12px}
+.study-tip .study-label{color:var(--primary)}
 </style>
 </head>
 <body>
@@ -516,9 +529,10 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title"><span class="icon">📖</span> 今日练字</div>
+          <div class="card-title"><span class="icon">📚</span> 每日学习</div>
+          <span class="card-badge" id="studyDayBadge"></span>
         </div>
-        <img class="img-preview show" id="handwritingPreview" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 160'><rect fill='%23f5f0e8' width='120' height='160'/><text x='60' y='85' text-anchor='middle' fill='%23ccc' font-size='12'>练字照片</text></svg>" style="height:140px">
+        <div id="dailyStudyContent"></div>
       </div>
 
       <div class="card">
@@ -1268,6 +1282,30 @@ function goToToday(){
 
 function formatDateCN(d){
   return `${d.getMonth()+1}月${d.getDate()}日 ${['周日','周一','周二','周三','周四','周五','周六'][d.getDay()]}`;
+}
+
+// ==================== Default Schedule Seed (按项目生成，可微调) ====================
+// 首次打开按你的项目播种一份默认日行程；之后在「今日计划」里随意增删改。
+const DEFAULT_SCHEDULE=[
+  {time:'07:30',text:'英语晨读打卡 🔤'},
+  {time:'08:00',text:'早餐 · 饮食打卡 🍱'},
+  {time:'09:00',text:'学AI 1 小时 🤖'},
+  {time:'10:30',text:'基金定投 + 持仓复盘 💰'},
+  {time:'12:00',text:'午餐 · 饮食打卡 🍱'},
+  {time:'14:00',text:'热点新闻 + 选题 🔥'},
+  {time:'15:30',text:'小红书 / 公众号内容创作 📕'},
+  {time:'18:00',text:'晚餐 · 饮食打卡 🍱'},
+  {time:'19:30',text:'养生 · 运动放松 🍵'},
+  {time:'21:00',text:'每日阅读 + 复盘笔记 📚'},
+  {time:'22:30',text:'早睡休息 🌙'}
+];
+
+function seedDefaultSchedule(){
+  if(DB.get('tasks_seeded'))return;
+  if(DB.get('tasks',[]).length>0){DB.set('tasks_seeded',true);return;}
+  const tasks=DEFAULT_SCHEDULE.map((t,i)=>({id:i+1,time:t.time,text:t.text,done:false}));
+  DB.set('tasks',tasks);
+  DB.set('tasks_seeded',true);
 }
 
 // ==================== Tasks (FIXED: per-date done status) ====================
@@ -2189,6 +2227,44 @@ function renderEnglish(){
     btn.disabled=false;
     btn.style.opacity='1';
   }
+
+  renderEnglishStudy();
+}
+
+// 每日英语学习内容（按星期轮换，打开英语页即刷新）
+const DAILY_STUDY=[
+  {word:'serendipity',phonetic:'/ˌserənˈdɪpəti/',meaning:'意外发现美好事物的运气',example:'Meeting her was pure serendipity.',sentence:'The best things in life are serendipity.',trans:'生活中最美好的事，往往是不期而遇。',tip:'晨读跟读例句 3 遍，培养语感与节奏。'},
+  {word:'resilient',phonetic:'/rɪˈzɪliənt/',meaning:'有韧性的；能快速恢复的',example:'A resilient mind bounces back from failure.',sentence:'Stay resilient, the market will recover.',trans:'保持韧性，市场终会回暖。',tip:'结合定投心态记忆：下跌是复利的朋友。'},
+  {word:'meticulous',phonetic:'/məˈtɪkjələs/',meaning:'一丝不苟的；极仔细的',example:'She is meticulous about her notes.',sentence:'Success favors the meticulous.',trans:'成功偏爱细致的人。',tip:'今天复盘笔记时，试着用英文写 3 条要点。'},
+  {word:'leverage',phonetic:'/ˈlevərɪdʒ/',meaning:'利用；杠杆（动词/名词）',example:'Leverage your strengths to grow.',sentence:'Leverage small daily habits for big results.',trans:'用好每天的小习惯，换来大结果。',tip:'联想「复利」概念：微小习惯的杠杆效应。'},
+  {word:'procrastinate',phonetic:'/prəˈkræstɪneɪt/',meaning:'拖延；推迟',example:'Don’t procrastinate on important tasks.',sentence:'Action beats procrastination every time.',trans:'行动永远胜过拖延。',tip:'用「5 分钟启动法」对付拖延：只做 5 分钟。'},
+  {word:'compound',phonetic:'/ˈkɒmpaʊnd/',meaning:'复利；复合的',example:'Compound interest builds wealth silently.',sentence:'Compound growth is the eighth wonder.',trans:'复利增长是第八大奇迹。',tip:'今天定投后，算一下 30 年复利的量级。'},
+  {word:'intrinsic',phonetic:'/ɪnˈtrɪnzɪk/',meaning:'内在的；固有的',example:'Find your intrinsic motivation.',sentence:'Intrinsic drive beats external pressure.',trans:'内在驱动力胜过外部压力。',tip:'写下「55 岁退休」这个内在目标，贴在学习区。'}
+];
+
+function renderEnglishStudy(){
+  const d=new Date().getDay(); // 0=周日 … 6=周六
+  const item=DAILY_STUDY[d]||DAILY_STUDY[1];
+  const badge=document.getElementById('studyDayBadge');
+  if(badge)badge.textContent=['周日','周一','周二','周三','周四','周五','周六'][d];
+  const el=document.getElementById('dailyStudyContent');
+  if(!el)return;
+  el.innerHTML=`
+    <div class="study-block">
+      <div class="study-label">📝 每日一词</div>
+      <div class="study-word">${item.word}<span class="study-phon">${item.phonetic}</span></div>
+      <div class="study-mean">${item.meaning}</div>
+      <div class="study-eg">${item.example}</div>
+    </div>
+    <div class="study-block">
+      <div class="study-label">💬 每日一句</div>
+      <div class="study-sentence">${item.sentence}</div>
+      <div class="study-trans">${item.trans}</div>
+    </div>
+    <div class="study-block study-tip">
+      <div class="study-label">💡 学习提示</div>
+      <div>${item.tip}</div>
+    </div>`;
 }
 
 function handleEnglishUpload(e){
@@ -2838,6 +2914,7 @@ function saveWellnessCheckin(){
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded',()=>{
   initData();
+  seedDefaultSchedule();
   renderNav();
   renderCalendar();
   document.getElementById('wechatNotes').value=DB.get('wechat_notes_content')||'';
