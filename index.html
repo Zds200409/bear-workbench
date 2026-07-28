@@ -1190,7 +1190,8 @@ async function _scfCloud(mode, data){
   const url=getScfUrl();
   if(!url) throw new Error('未配置 SCF URL');
   const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode,...data})});
-  return r.json();
+  const text=await r.text();
+  try{return JSON.parse(text);}catch(e){throw new Error('SCF返回非JSON('+r.status+'): '+text.slice(0,300));}
 }
 async function cloudLogin(){
   const env=DB.get('cloud_env_id','');
