@@ -413,17 +413,22 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         <div class="card-header">
           <div class="card-title"><span class="icon">⚙️</span> 自动发布设置</div>
         </div>
+        <div class="input-group" style="margin-bottom:14px">
+          <label class="input-label">🚀 公众号发布地址（SCF 函数 URL）</label>
+          <input class="input" id="wechatScfUrl" placeholder="https://xxx.apigw.tencentcs.com/release/..." style="font-size:12px" onchange="DB.set('wechat_scf_url',this.value.trim())">
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">填一次即可。在腾讯云 SCF 建好函数后，把 API 网关访问路径粘到这里。密钥只在云端，不进本机。</div>
+        </div>
         <div class="setting-item">
           <div class="setting-info">
             <div class="setting-name">定时自动发布时间</div>
-            <div class="setting-desc">每天该时间由本地后端自动发布（需 node server/server.js 保持运行）</div>
+            <div class="setting-desc">每天该时间由腾讯云 SCF 自动发布（需先在 SCF 建「每15分钟」定时器）</div>
           </div>
           <input type="time" class="input" id="autoPublishTime" value="09:30" style="width:100px;padding:6px 10px;font-size:13px" onchange="saveWechatSchedule()">
         </div>
         <div class="setting-item">
           <div class="setting-info">
             <div class="setting-name">自动发布开关</div>
-            <div class="setting-desc">开启后每天定时发当前草稿（需先传封面图）</div>
+            <div class="setting-desc">开启后把当前草稿入队，到点自动发（需先传封面图）</div>
           </div>
           <div class="toggle-switch on" id="autoPublishToggle" onclick="saveWechatSchedule(this)"></div>
         </div>
@@ -1732,7 +1737,7 @@ async function generateWechatContent(){
   DB.set('wechat_draft',draft);
 }
 
-// ==================== 公众号真实发布（调本地后端 /api/publish） ====================
+// ==================== 公众号真实发布（调腾讯云 SCF 函数） ====================
 function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function mdToHtml(md){
   const lines=(md||'').split('\n');
@@ -1766,22 +1771,27 @@ function handleCoverUpload(e){
   };
   reader.readAsDataURL(file);
 }
+function getScfUrl(){
+  return (DB.get('wechat_scf_url','')||'').trim();
+}
 async function publishToWechat(){
   const draftEl=document.getElementById('wechatDraft');
   const draft=(draftEl.value||'').trim();
   if(!draft){alert('还没有内容，先点「✨ 立即生成」。');return;}
   const cover=DB.get('wechat_cover','');
   if(!cover){alert('⚠️ 发布到公众号必须上传封面图。\n请在上方「封面图」选择一张图片。');return;}
+  const url=getScfUrl();
+  if(!url){alert('⚠️ 还没填「公众号发布地址(SCF)」。\n请到 设置 → 自动发布设置，粘贴你的腾讯云 SCF 函数 URL。');return;}
   const titleInput=document.getElementById('wechatTitle');
   const title=(titleInput&&titleInput.value.trim())||(draft.split('\n').find(l=>l.trim())||'未命名文章');
   const niche=DB.get('wechat_niche','')||'';
   const btn=document.querySelector('[onclick="publishToWechat()"]');
   if(btn){btn.disabled=true;btn.textContent='⏳ 发布中...';}
   try{
-    const resp=await fetch('/api/publish',{
+    const resp=await fetch(url,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({title,author:niche,digest:'',contentHtml:mdToHtml(draft),coverBase64:cover})
+      body:JSON.stringify({mode:'now',title,author:niche,digest:'',contentHtml:mdToHtml(draft),coverBase64:cover})
     });
     const j=await resp.json();
     if(btn){btn.disabled=false;btn.textContent='🚀 推送到公众号';}
@@ -1792,7 +1802,7 @@ async function publishToWechat(){
     }
   }catch(err){
     if(btn){btn.disabled=false;btn.textContent='🚀 推送到公众号';}
-    alert('❌ 无法连接后端（'+err.message+'）。\n请确认：1) 已运行 node server/server.js；2) 用 http://localhost:3000 打开本页。');
+    alert('❌ 无法连接 SCF（'+err.message+'）。\n检查：1) SCF URL 是否填对；2) 函数是否已部署并开启 API 网关；3) 网络能否访问腾讯云。');
   }
 }
 async function saveWechatSchedule(toggleEl){
@@ -1806,32 +1816,37 @@ async function saveWechatSchedule(toggleEl){
   if(enabled){
     if(!draft){alert('⚠️ 先生成或写好草稿，再开启定时发布。');if(toggleEl)toggleEl.classList.toggle('on');return;}
     if(!cover){alert('⚠️ 定时发布也需要封面图，请先在上方的「封面图」选择图片。');if(toggleEl)toggleEl.classList.toggle('on');return;}
+    const url=getScfUrl();
+    if(!url){alert('⚠️ 还没填「公众号发布地址(SCF)」，无法入队。\n请到 设置 → 自动发布设置 粘贴 SCF 函数 URL。');if(toggleEl)toggleEl.classList.toggle('on');return;}
   }
+  // 本地记住开关状态（恢复 UI 用）
+  DB.set('wechat_schedule',{enabled,time});
+  if(!enabled)return;
   const title=(document.getElementById('wechatTitle').value.trim())||(draft.split('\n').find(l=>l.trim())||'未命名文章');
   const niche=DB.get('wechat_niche','')||'';
-  const payload=enabled?{title,author:niche,digest:'',contentHtml:mdToHtml(draft),coverBase64:cover}:null;
   try{
-    const resp=await fetch('/api/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled,time,payload})});
+    const resp=await fetch(getScfUrl(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'schedule',time,title,author:niche,digest:'',contentHtml:mdToHtml(draft),coverBase64:cover})});
     const j=await resp.json();
     if(j.ok){
-      if(enabled)alert('✅ 已设为每天 '+time+' 自动发布（需后端 node server/server.js 保持运行）。');
-    }else{alert('❌ 保存失败：'+j.error);}
+      alert('✅ 已入队，每天 '+time+' 由腾讯云 SCF 自动发布（需 SCF 已建「每15分钟」定时器）。');
+    }else{alert('❌ 入队失败：'+j.error);}
   }catch(err){
-    alert('❌ 无法连接后端：'+err.message+'\n请用本地后端地址打开本页。');
+    alert('❌ 无法连接 SCF：'+err.message);
     if(toggleEl)toggleEl.classList.toggle('on');
   }
 }
 async function loadWechatSchedule(){
   try{
-    const resp=await fetch('/api/schedule');
-    const j=await resp.json();
-    if(j.ok&&j.schedule){
+    const s=DB.get('wechat_schedule',null);
+    if(s){
       const t=document.getElementById('autoPublishToggle');
       const timeEl=document.getElementById('autoPublishTime');
-      if(j.schedule.enabled&&t&&!t.classList.contains('on'))t.classList.add('on');
-      if(timeEl&&j.schedule.time)timeEl.value=j.schedule.time;
+      if(s.enabled&&t&&!t.classList.contains('on'))t.classList.add('on');
+      if(timeEl&&s.time)timeEl.value=s.time;
     }
-  }catch(e){/* 后端没开就忽略 */}
+    const urlEl=document.getElementById('wechatScfUrl');
+    if(urlEl)urlEl.value=getScfUrl();
+  }catch(e){/* 忽略 */}
 }
 
 // 基于赛道 + 真实热点，生成结构化公众号文章草稿
