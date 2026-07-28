@@ -464,7 +464,7 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
         </div>
         <div class="btn-group">
           <button class="btn btn-primary btn-sm" id="genWechatBtn" onclick="generateWechatContent()">✨ 立即生成</button>
-          <button class="btn btn-success btn-sm" onclick="publishToWechat()">🚀 推送到公众号</button>
+          <button class="btn btn-success btn-sm" onclick="publishToWechat()">📥 存入公众号草稿</button>
           <button class="btn btn-outline btn-sm" onclick="saveWechatDraft()">💾 存入草稿</button>
           <button class="btn btn-outline btn-sm" onclick="copyWechatContent()">📋 复制</button>
         </div>
@@ -1946,14 +1946,14 @@ async function publishToWechat(){
       body:JSON.stringify({mode:'now',title,author:niche,digest:'',contentHtml:mdToHtml(draft),coverBase64:cover})
     });
     const j=await resp.json();
-    if(btn){btn.disabled=false;btn.textContent='🚀 推送到公众号';}
+    if(btn){btn.disabled=false;btn.textContent='📥 存入公众号草稿';}
     if(j.ok){
-      alert('✅ 已提交发布！\n发布ID：'+j.publish_id+'\n公众号后台「发表记录」可查看，微信通常几分钟内审核生效。');
+      alert('✅ 已存入公众号草稿箱！\n草稿ID：'+(j.media_id||'')+'\n请到公众号后台「草稿箱」找到本文，点「发表」即可推送（订阅号需用此方式）。');
     }else{
       alert('❌ 发布失败：'+JSON.stringify(j));
     }
   }catch(err){
-    if(btn){btn.disabled=false;btn.textContent='🚀 推送到公众号';}
+    if(btn){btn.disabled=false;btn.textContent='📥 存入公众号草稿';}
     alert('❌ 无法连接 SCF（'+err.message+'）。\n检查：1) SCF URL 是否填对；2) 函数是否已部署并开启 API 网关；3) 网络能否访问腾讯云。');
   }
 }
@@ -3357,7 +3357,7 @@ function renderFunnel(){
     <div class="card">
       <div class="card-header"><div class="card-title"><span class="icon">📮</span> 公众号长文（草稿）</div><button class="btn btn-outline btn-sm" onclick="switchPage('wechat')">去编辑/发布</button></div>
       ${wxCard}
-      <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="publishToWechat()" ${wd?'':'disabled'}>🚀 推送到公众号${wd?'':'（先生成）'}</button>
+      <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="publishToWechat()" ${wd?'':'disabled'}>📥 存入公众号草稿${wd?'':'（先生成）'}</button>
     </div>
     <div class="card">
       <div class="card-header"><div class="card-title"><span class="icon">📕</span> 小红书文案（草稿）</div><button class="btn btn-outline btn-sm" onclick="copyXhsText(DB.get('xhs_draft',''))">📋 复制</button></div>

@@ -130,22 +130,26 @@ async function runScheduled() {
         await deleteDraft(it.media_id);
         published.push({ title: it.title, publish_id: pid });
       } catch (e) {
-        published.push({ title: it.title, error: e.message });
+        // 订阅号无 freepublish 权限(errcode 48001) → 留草稿不删，提示后台手动发
+        if (e.message && e.message.indexOf('48001') >= 0) {
+          published.push({ title: it.title, skipped: true, error: '订阅号无法自动发表，草稿已保留，请到后台手动发表' });
+        } else {
+          published.push({ title: it.title, error: e.message });
+        }
       }
     }
   }
   return { ok: true, published };
 }
 
-// 立即发布
+// 立即发布（订阅号无 freepublish/submit 权限 → 仅存入草稿箱，用户后台手动发表）
 async function publishNow(p) {
   const coverId = await uploadCover(p.coverBase64);
   const media_id = await addDraft({
     title: p.title, author: p.author, digest: p.digest,
     contentHtml: p.contentHtml, thumb_media_id: coverId
   });
-  const publish_id = await submitPublish(media_id);
-  return { ok: true, publish_id };
+  return { ok: true, media_id, draft: true, note: '已存入微信草稿箱，请到公众号后台手动发表' };
 }
 
 // 定时发布：仅创建标记草稿
