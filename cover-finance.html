@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>公众号封面生成器 · 财经风</title>
+<style>
+  :root{ --primary:#5a9a6e; }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#eef1ee;color:#333;display:flex;flex-direction:column;align-items:center;padding:24px 16px;gap:16px;}
+  h1{font-size:18px;margin:0;color:#2f4f3a;}
+  .wrap{width:100%;max-width:700px;background:#fff;border-radius:16px;padding:18px;box-shadow:0 6px 24px rgba(0,0,0,.08);}
+  canvas{width:100%;height:auto;display:block;border-radius:12px;border:1px solid #eee;background:#fff;}
+  .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center;}
+  .seg{display:flex;gap:6px;background:#f2f4f2;padding:4px;border-radius:10px;}
+  .seg button{border:0;background:transparent;padding:7px 12px;border-radius:8px;font-size:13px;cursor:pointer;color:#555;}
+  .seg button.on{background:#fff;color:#2f4f3a;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+  .btn{margin-left:auto;border:0;background:var(--primary);color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600;}
+  .btn:active{transform:scale(.98);}
+  .tip{font-size:12px;color:#888;text-align:center;margin-top:6px;line-height:1.6;}
+</style>
+</head>
+<body>
+  <h1>📈 公众号封面生成器（财经风）</h1>
+  <div class="wrap">
+    <canvas id="cv" width="1200" height="675"></canvas>
+    <div class="row">
+      <div class="seg" id="seg">
+        <button data-theme="green" class="on">绿金</button>
+        <button data-theme="blue">蓝金</button>
+        <button data-theme="dark">暗金</button>
+      </div>
+      <button class="btn" id="dl">⬇️ 下载封面 PNG</button>
+    </div>
+    <div class="tip">打开即用，无需联网。点「下载封面 PNG」得到 1200×675 真实图片，可直接作为公众号封面上传。<br>底部已留白，方便你在微信后台叠加文章标题。</div>
+  </div>
+<script>
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+const W=1200,H=675;
+
+const THEMES={
+  green:{bg1:'#f3f8f4',bg2:'#e3efe7',hi:'#ffffff',gold:'#c9a227',gold2:'#e6c558',line:'#b8860b',up:'#5a9a6e',down:'#c97b6b',coin:'#d4af37',strip:'rgba(255,255,255,0.55)'},
+  blue:{bg1:'#f1f5f9',bg2:'#dde8f2',hi:'#ffffff',gold:'#c9a227',gold2:'#e6c558',line:'#1f6f9e',up:'#2f7fb5',down:'#c97b6b',coin:'#d4af37',strip:'rgba(255,255,255,0.55)'},
+  dark:{bg1:'#1d2a22',bg2:'#0f1813',hi:'#2a3d30',gold:'#e8c45a',gold2:'#f3d77e',line:'#e8c45a',up:'#7fc79a',down:'#d98b7a',coin:'#f0cf6a',strip:'rgba(15,24,19,0)'}
+};
+let theme='green';
+
+function rnd(seed){ let x=Math.sin(seed)*10000; return x-Math.floor(x); }
+
+function draw(){
+  const t=THEMES[theme];
+  ctx.clearRect(0,0,W,H);
+  // 背景渐变
+  let g=ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,t.bg1);g.addColorStop(1,t.bg2);
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // 右上角高光
+  let rg=ctx.createRadialGradient(W*0.82,H*0.18,30,W*0.82,H*0.18,W*0.6);
+  rg.addColorStop(0,t.hi);rg.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=rg;ctx.fillRect(0,0,W,H);
+  // 柔光圆点
+  for(let i=0;i<7;i++){
+    const x=rnd(i+1)*W, y=rnd(i+99)*H*0.7, r=30+rnd(i+7)*70;
+    ctx.beginPath();ctx.arc(x,y,r,0,7);
+    ctx.fillStyle=t.gold;ctx.globalAlpha=0.06;ctx.fill();ctx.globalAlpha=1;
+  }
+  // K线（左下）
+  const cx0=120, cyBase=H*0.62, cw=14, gap=30;
+  for(let i=0;i<9;i++){
+    const x=cx0+i*gap;
+    const hgt=30+rnd(i+3)*120;
+    const up=rnd(i+13)>0.4;
+    const col=up?t.up:t.down;
+    const top=cyBase-hgt;
+    ctx.fillStyle=col;ctx.globalAlpha=0.85;
+    ctx.fillRect(x-cw/2,top,cw,hgt);
+    ctx.globalAlpha=0.5;
+    ctx.fillRect(x-1.5,top-16,3,hgt+32);
+    ctx.globalAlpha=1;
+  }
+  // 上升曲线
+  const pts=[];
+  const bx=80,by=H*0.80,ex=W*0.92,ey=H*0.20,n=6;
+  for(let i=0;i<=n;i++){
+    const px=bx+(ex-bx)*(i/n);
+    const py=by+(ey-by)*(i/n)-Math.sin(i*0.9)*22*(i/n);
+    pts.push([px,py]);
+  }
+  function curvePath(){
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++){
+      const p=pts[i],prev=pts[i-1];
+      const cxm=(prev[0]+p[0])/2;
+      ctx.bezierCurveTo(cxm,prev[1],cxm,p[1],p[0],p[1]);
+    }
+  }
+  // 曲线下填充
+  curvePath();
+  ctx.lineTo(ex,H);ctx.lineTo(bx,H);ctx.closePath();
+  let ag=ctx.createLinearGradient(0,ey,0,H);
+  ag.addColorStop(0,t.gold);ag.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.globalAlpha=0.16;ctx.fillStyle=ag;ctx.fill();ctx.globalAlpha=1;
+  // 曲线描边
+  curvePath();
+  ctx.strokeStyle=t.line;ctx.lineWidth=4;ctx.lineCap='round';ctx.stroke();
+  // 顶点圆点
+  pts.forEach((p,i)=>{ if(i%2===0){ctx.beginPath();ctx.arc(p[0],p[1],5,0,7);ctx.fillStyle=t.gold;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.stroke();}});
+  // 金币（右上）
+  drawCoin(W*0.72,H*0.30,54,t);
+  drawCoin(W*0.85,H*0.43,40,t);
+  drawCoin(W*0.65,H*0.46,30,t);
+  // 底部留白带（叠标题）
+  let bg2=ctx.createLinearGradient(0,H*0.68,0,H);
+  bg2.addColorStop(0,'rgba(255,255,255,0)');
+  bg2.addColorStop(1,t.strip);
+  ctx.fillStyle=bg2;ctx.fillRect(0,H*0.68,W,H*0.32);
+}
+
+function drawCoin(x,y,r,t){
+  let cg=ctx.createRadialGradient(x-r*0.3,y-r*0.3,r*0.2,x,y,r);
+  cg.addColorStop(0,t.gold2);cg.addColorStop(1,t.coin);
+  ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle=cg;ctx.fill();
+  ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y,r*0.78,0,7);ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.92)';
+  ctx.font='bold '+(r*0.92)+'px serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('¥',x,y+1);
+}
+
+document.getElementById('seg').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  theme=b.dataset.theme;
+  [...e.currentTarget.children].forEach(c=>c.classList.toggle('on',c===b));
+  draw();
+});
+document.getElementById('dl').addEventListener('click',()=>{
+  cv.toBlob(b=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b);
+    a.download='公众号封面_财经风.png';
+    a.click();
+  },'image/png');
+});
+draw();
+</script>
+</body>
+</html>
