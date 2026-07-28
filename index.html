@@ -1083,6 +1083,9 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           </div>
           <div class="toggle-switch on" id="autoPublishToggle" onclick="saveWechatSchedule(this)"></div>
         </div>
+        <div class="invest-warn" style="margin-top:10px">
+          ⚠️ 当前为<b>订阅号</b>：开启开关仅把草稿<b>入队到微信草稿箱</b>，仍需到后台手动点「发表」。自动发表接口（freepublish）仅对<b>已认证服务号</b>开放；成为服务号后恢复一行代码即可全自动。
+        </div>
       </div>
 
       <div class="card">
@@ -1096,6 +1099,23 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
           <button class="btn btn-outline btn-sm" style="color:#e74c3c;border-color:#e74c3c" onclick="clearAllData()">🗑️ 清空所有数据</button>
         </div>
         <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">☁️</span> 云同步（多设备）</div>
+        </div>
+        <div class="input-group" style="margin-bottom:10px">
+          <label class="input-label">CloudBase 环境 ID</label>
+          <input class="input" id="cloudEnvId" placeholder="如：bear-workbench-7gxxxx" style="font-size:12px" onchange="DB.set('cloud_env_id',this.value.trim())">
+        </div>
+        <div id="cloudStatus" style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">未连接。开通腾讯云 CloudBase 后填入「环境 ID」，即可在手机/电脑间同步所有数据（匿名登录，免注册）。</div>
+        <div class="btn-group" style="flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="cloudLogin()">🔗 连接并登录</button>
+          <button class="btn btn-outline btn-sm" onclick="cloudUpload()">☁️ 上传到云</button>
+          <button class="btn btn-outline btn-sm" onclick="cloudDownload()">⬇️ 从云下载</button>
+        </div>
+        <div class="invest-note">数据存于你自己的 CloudBase 环境，仅你自己可见。需先在 CloudBase 控制台开启「匿名登录」，并创建一个名为 <b>wb_sync</b> 的数据库集合。</div>
       </div>
 
       <div class="card">
@@ -1163,6 +1183,69 @@ const DB = {
   set(key,val){localStorage.setItem('bear_workbench_'+key,JSON.stringify(val))},
   remove(key){localStorage.removeItem('bear_workbench_'+key)}
 };
+
+// ==================== Cloud Sync (CloudBase) ====================
+let _cloudApp=null, _cloudLoggedIn=false, _cloudTimer=null;
+function _loadCloudSDK(){
+  if(window.cloud) return Promise.resolve(true);
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://tcb.cloud.tencent.com/cloudbase-js-sdk/index.js';
+    s.onload=()=>res(true);
+    s.onerror=()=>rej(new Error('CloudBase SDK 加载失败（请检查网络能否访问 tcb.cloud.tencent.com）'));
+    document.head.appendChild(s);
+  });
+}
+async function cloudLogin(){
+  const env=DB.get('cloud_env_id','');
+  if(!env){alert('⚠️ 请先在上方填写 CloudBase 环境 ID。');return;}
+  const st=document.getElementById('cloudStatus');
+  if(st)st.textContent='连接中...';
+  try{
+    await _loadCloudSDK();
+    if(!_cloudApp) _cloudApp=window.cloud.init({env});
+    const auth=_cloudApp.auth({persistent:true});
+    if(!_cloudLoggedIn){ await auth.signInAnonymously(); _cloudLoggedIn=true; }
+    DB.set('cloud_connected',true);
+    if(st)st.innerHTML='✅ 已连接（匿名）· 环境 '+env;
+    await cloudDownload(false);
+  }catch(e){ if(st)st.textContent='❌ 连接失败：'+e.message; }
+}
+async function cloudUpload(showAlert=true){
+  if(!_cloudApp||!_cloudLoggedIn){if(showAlert)alert('请先点「连接并登录」。');return;}
+  try{
+    const db=_cloudApp.database();
+    const col=db.collection('wb_sync');
+    const keys=[];
+    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('bear_workbench_')===0)keys.push(k);}
+    for(const k of keys){ await col.doc(k).set({k:k, v:localStorage.getItem(k), updated:Date.now()}); }
+    const st=document.getElementById('cloudStatus');
+    if(st)st.innerHTML='✅ 已上传 '+keys.length+' 项 · '+new Date().toLocaleTimeString('zh-CN');
+    if(showAlert)alert('✅ 已上传 '+keys.length+' 项到云端。');
+  }catch(e){if(showAlert)alert('❌ 上传失败：'+e.message);}
+}
+async function cloudDownload(showAlert=true){
+  if(!_cloudApp||!_cloudLoggedIn){if(showAlert)alert('请先点「连接并登录」。');return;}
+  try{
+    const db=_cloudApp.database();
+    const res=await db.collection('wb_sync').limit(1000).get();
+    let n=0;
+    (res.data||[]).forEach(d=>{if(d&&d.k){localStorage.setItem(d.k,d.v);n++;}});
+    const st=document.getElementById('cloudStatus');
+    if(st)st.innerHTML='✅ 已从云下载 '+n+' 项 · '+new Date().toLocaleTimeString('zh-CN');
+    if(showAlert)alert('✅ 已从云下载 '+n+' 项，刷新页面生效。');
+  }catch(e){if(showAlert)alert('❌ 下载失败：'+e.message);}
+}
+// 本地写入后自动（防抖）上传到云
+(function(){
+  const _origSet=DB.set.bind(DB);
+  DB.set=function(k,v){_origSet(k,v);if(_cloudLoggedIn&&_cloudApp){clearTimeout(_cloudTimer);_cloudTimer=setTimeout(()=>cloudUpload(false),1500);}};
+})();
+window.addEventListener('load',()=>{
+  const ce=DB.get('cloud_env_id','');
+  const ceEl=document.getElementById('cloudEnvId'); if(ceEl)ceEl.value=ce;
+  if(DB.get('cloud_connected',false)&&ce){ cloudLogin(); }
+});
 
 // Get today's date key (YYYY-MM-DD format)
 function todayKey(){return new Date().toISOString().split('T')[0]}
@@ -1724,6 +1807,19 @@ function copyXhsText(text){
     alert('已复制到剪贴板 ✓');
   }
 }
+// 小红书半自动发布：复制文案并打开网页创作页（小红书无开放API，手动粘贴即发）
+function openXhsPublish(){
+  const t=DB.get('xhs_draft','');
+  if(!t||!t.trim()){alert('还没有小红书文案，先点「✨ 一键生成」。');return;}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(t).catch(()=>{});
+  }else{
+    const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  }
+  window.open('https://creator.xiaohongshu.com/publish/publish','_blank');
+  alert('✅ 文案已复制，已打开小红书创作页。\n粘贴标题/正文即可发布（小红书暂无开放发布 API，自动发布需官方合作权限）。');
+}
 
 function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
@@ -1980,7 +2076,7 @@ async function saveWechatSchedule(toggleEl){
     const resp=await fetch(getScfUrl(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'schedule',time,title,author:niche,digest:'',contentHtml:mdToHtml(draft),coverBase64:cover})});
     const j=await resp.json();
     if(j.ok){
-      alert('✅ 已入队，每天 '+time+' 由腾讯云 SCF 自动发布（需 SCF 已建「每15分钟」定时器）。');
+      alert('✅ 已入队草稿箱，每天 '+time+' 由腾讯云 SCF 自动存入微信草稿（订阅号需再到后台手动「发表」）。');
     }else{alert('❌ 入队失败：'+j.error);}
   }catch(err){
     alert('❌ 无法连接 SCF：'+err.message);
@@ -3423,7 +3519,7 @@ function renderFunnel(){
       <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="publishToWechat()" ${wd?'':'disabled'}>📥 存入公众号草稿${wd?'':'（先生成）'}</button>
     </div>
     <div class="card">
-      <div class="card-header"><div class="card-title"><span class="icon">📕</span> 小红书文案（草稿）</div><button class="btn btn-outline btn-sm" onclick="copyXhsText(DB.get('xhs_draft',''))">📋 复制</button></div>
+      <div class="card-header"><div class="card-title"><span class="icon">📕</span> 小红书文案（草稿）</div><button class="btn btn-outline btn-sm" onclick="copyXhsText(DB.get('xhs_draft',''))">📋 复制</button><button class="btn btn-outline btn-sm" onclick="openXhsPublish()">📕 去发布</button></div>
       ${xhsCard}
     </div>
     <div class="card">
