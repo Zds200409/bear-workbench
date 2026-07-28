@@ -325,6 +325,22 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 .study-trans{font-size:12px;color:var(--text-secondary);margin-top:4px}
 .study-tip{background:var(--primary-soft);border-radius:var(--radius-sm);padding:10px 12px}
 .study-tip .study-label{color:var(--primary)}
+/* 雅思每日50词 */
+.ielts-progress{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ielts-words{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto;padding-right:2px}
+.ielts-word{display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--bg-main);border-radius:var(--radius-sm)}
+.ielts-play{cursor:pointer;flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--primary-soft);color:var(--primary);border:none;font-size:13px;display:flex;align-items:center;justify-content:center}
+.ielts-play:active{transform:scale(.92)}
+.ielts-wtext{font-size:14px;font-weight:600;color:var(--text)}
+.ielts-ipa{font-size:12px;color:var(--text-light);margin-left:6px}
+.ielts-pos{font-size:11px;color:var(--primary);background:var(--primary-soft);padding:1px 6px;border-radius:10px;margin-left:6px}
+.ielts-cn{flex:1;font-size:13px;color:var(--text-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ielts-master{cursor:pointer;font-size:12px;color:var(--text-light);flex-shrink:0;border:none;background:none;padding:4px 6px}
+.ielts-master.done{color:#27ae60;font-weight:700}
+.ielts-four{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.ielts-four .ef{background:var(--bg-main);border-radius:var(--radius-sm);padding:10px}
+.ielts-four .ef-t{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:4px}
+.ielts-four .ef-d{font-size:12px;color:var(--text-secondary);line-height:1.5}
 </style>
 </head>
 <body>
@@ -529,7 +545,7 @@ textarea.input{resize:vertical;min-height:80px;font-family:inherit}
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title"><span class="icon">📚</span> 每日学习</div>
+          <div class="card-title"><span class="icon">📚</span> 雅思每日学习</div>
           <span class="card-badge" id="studyDayBadge"></span>
         </div>
         <div id="dailyStudyContent"></div>
@@ -2231,39 +2247,134 @@ function renderEnglish(){
   renderEnglishStudy();
 }
 
-// 每日英语学习内容（按星期轮换，打开英语页即刷新）
-const DAILY_STUDY=[
-  {word:'serendipity',phonetic:'/ˌserənˈdɪpəti/',meaning:'意外发现美好事物的运气',example:'Meeting her was pure serendipity.',sentence:'The best things in life are serendipity.',trans:'生活中最美好的事，往往是不期而遇。',tip:'晨读跟读例句 3 遍，培养语感与节奏。'},
-  {word:'resilient',phonetic:'/rɪˈzɪliənt/',meaning:'有韧性的；能快速恢复的',example:'A resilient mind bounces back from failure.',sentence:'Stay resilient, the market will recover.',trans:'保持韧性，市场终会回暖。',tip:'结合定投心态记忆：下跌是复利的朋友。'},
-  {word:'meticulous',phonetic:'/məˈtɪkjələs/',meaning:'一丝不苟的；极仔细的',example:'She is meticulous about her notes.',sentence:'Success favors the meticulous.',trans:'成功偏爱细致的人。',tip:'今天复盘笔记时，试着用英文写 3 条要点。'},
-  {word:'leverage',phonetic:'/ˈlevərɪdʒ/',meaning:'利用；杠杆（动词/名词）',example:'Leverage your strengths to grow.',sentence:'Leverage small daily habits for big results.',trans:'用好每天的小习惯，换来大结果。',tip:'联想「复利」概念：微小习惯的杠杆效应。'},
-  {word:'procrastinate',phonetic:'/prəˈkræstɪneɪt/',meaning:'拖延；推迟',example:'Don’t procrastinate on important tasks.',sentence:'Action beats procrastination every time.',trans:'行动永远胜过拖延。',tip:'用「5 分钟启动法」对付拖延：只做 5 分钟。'},
-  {word:'compound',phonetic:'/ˈkɒmpaʊnd/',meaning:'复利；复合的',example:'Compound interest builds wealth silently.',sentence:'Compound growth is the eighth wonder.',trans:'复利增长是第八大奇迹。',tip:'今天定投后，算一下 30 年复利的量级。'},
-  {word:'intrinsic',phonetic:'/ɪnˈtrɪnzɪk/',meaning:'内在的；固有的',example:'Find your intrinsic motivation.',sentence:'Intrinsic drive beats external pressure.',trans:'内在驱动力胜过外部压力。',tip:'写下「55 岁退休」这个内在目标，贴在学习区。'}
+// 雅思每日 50 词（学术高频词，含英式音标；🔊 浏览器语音合成朗读，无需外部音频）
+const IELTS_WORDS=[
+  {w:'abandon',ipa:'/əˈbændən/',pos:'v.',cn:'放弃，抛弃'},
+  {w:'abstract',ipa:'/ˈæbstrækt/',pos:'adj.',cn:'抽象的'},
+  {w:'accelerate',ipa:'/əkˈseləreɪt/',pos:'v.',cn:'加速，加快'},
+  {w:'accomplish',ipa:'/əˈkʌmplɪʃ/',pos:'v.',cn:'完成，实现'},
+  {w:'accurate',ipa:'/ˈækjərət/',pos:'adj.',cn:'准确的，精确的'},
+  {w:'achieve',ipa:'/əˈtʃiːv/',pos:'v.',cn:'达到，实现'},
+  {w:'acquire',ipa:'/əˈkwaɪə/',pos:'v.',cn:'获得，习得'},
+  {w:'adequate',ipa:'/ˈædɪkwət/',pos:'adj.',cn:'足够的，恰当的'},
+  {w:'adjacent',ipa:'/əˈdʒeɪsnt/',pos:'adj.',cn:'邻近的，相邻的'},
+  {w:'adjust',ipa:'/əˈdʒʌst/',pos:'v.',cn:'调整，适应'},
+  {w:'adverse',ipa:'/ˈædvɜːs/',pos:'adj.',cn:'不利的，相反的'},
+  {w:'advocate',ipa:'/ˈædvəkeɪt/',pos:'v.',cn:'提倡，主张'},
+  {w:'affect',ipa:'/əˈfekt/',pos:'v.',cn:'影响'},
+  {w:'allocate',ipa:'/ˈæləkeɪt/',pos:'v.',cn:'分配，拨出'},
+  {w:'ambiguous',ipa:'/æmˈbɪɡjuəs/',pos:'adj.',cn:'模棱两可的'},
+  {w:'analyze',ipa:'/ˈænəlaɪz/',pos:'v.',cn:'分析'},
+  {w:'anticipate',ipa:'/ænˈtɪsɪpeɪt/',pos:'v.',cn:'预期，预料'},
+  {w:'apparent',ipa:'/əˈpærənt/',pos:'adj.',cn:'明显的，表面的'},
+  {w:'arbitrary',ipa:'/ˈɑːbɪtrəri/',pos:'adj.',cn:'任意的，武断的'},
+  {w:'assess',ipa:'/əˈses/',pos:'v.',cn:'评估，评定'},
+  {w:'assume',ipa:'/əˈsjuːm/',pos:'v.',cn:'假定，认为'},
+  {w:'attribute',ipa:'/əˈtrɪbjuːt/',pos:'v.',cn:'把…归因于'},
+  {w:'authority',ipa:'/ɔːˈθɒrəti/',pos:'n.',cn:'权威，当局'},
+  {w:'available',ipa:'/əˈveɪləbl/',pos:'adj.',cn:'可获得的，可用的'},
+  {w:'benefit',ipa:'/ˈbenɪfɪt/',pos:'n./v.',cn:'益处，使受益'},
+  {w:'capacity',ipa:'/kəˈpæsəti/',pos:'n.',cn:'能力，容量'},
+  {w:'category',ipa:'/ˈkætəɡəri/',pos:'n.',cn:'类别，种类'},
+  {w:'circumstance',ipa:'/ˈsɜːkəmstɑːns/',pos:'n.',cn:'情况，环境'},
+  {w:'compensate',ipa:'/ˈkɒmpenseɪt/',pos:'v.',cn:'补偿，弥补'},
+  {w:'complex',ipa:'/ˈkɒmpleks/',pos:'adj.',cn:'复杂的'},
+  {w:'component',ipa:'/kəmˈpəʊnənt/',pos:'n.',cn:'组成部分，部件'},
+  {w:'conclude',ipa:'/kənˈkluːd/',pos:'v.',cn:'推断出，总结'},
+  {w:'conduct',ipa:'/kənˈdʌkt/',pos:'v.',cn:'进行，实施'},
+  {w:'consequence',ipa:'/ˈkɒnsɪkwəns/',pos:'n.',cn:'后果，结果'},
+  {w:'consist',ipa:'/kənˈsɪst/',pos:'v.',cn:'由…组成'},
+  {w:'constitute',ipa:'/ˈkɒnstɪtjuːt/',pos:'v.',cn:'构成，组成'},
+  {w:'consume',ipa:'/kənˈsjuːm/',pos:'v.',cn:'消耗，消费'},
+  {w:'contemporary',ipa:'/kənˈtemprəri/',pos:'adj.',cn:'当代的，同时代的'},
+  {w:'context',ipa:'/ˈkɒntekst/',pos:'n.',cn:'背景，上下文'},
+  {w:'contrast',ipa:'/ˈkɒntrɑːst/',pos:'n./v.',cn:'对比，对照'},
+  {w:'contribute',ipa:'/kənˈtrɪbjuːt/',pos:'v.',cn:'贡献，促成'},
+  {w:'controversial',ipa:'/ˌkɒntrəˈvɜːʃl/',pos:'adj.',cn:'有争议的'},
+  {w:'core',ipa:'/kɔː/',pos:'n./adj.',cn:'核心（的）'},
+  {w:'correlation',ipa:'/ˌkɒrəˈleɪʃn/',pos:'n.',cn:'关联，相关性'},
+  {w:'create',ipa:'/kriˈeɪt/',pos:'v.',cn:'创造，创建'},
+  {w:'crucial',ipa:'/ˈkruːʃl/',pos:'adj.',cn:'关键的，至关重要的'},
+  {w:'culture',ipa:'/ˈkʌltʃə/',pos:'n.',cn:'文化'},
+  {w:'decline',ipa:'/dɪˈklaɪn/',pos:'v./n.',cn:'下降，拒绝'},
+  {w:'demonstrate',ipa:'/ˈdemənstreɪt/',pos:'v.',cn:'证明，演示'},
+  {w:'distribute',ipa:'/dɪˈstrɪbjuːt/',pos:'v.',cn:'分配，分发'}
 ];
 
+// 语音朗读（优先英式发音，贴合雅思）
+function speakWord(text){
+  if(!('speechSynthesis' in window)){alert('当前浏览器不支持语音朗读，请换 Chrome/Edge/Safari');return;}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='en-GB';u.rate=0.85;
+  speechSynthesis.speak(u);
+}
+// 朗读全部 50 词（链式播放，避免队列丢音）
+function speakAllIelts(){
+  if(!('speechSynthesis' in window)){alert('当前浏览器不支持语音朗读，请换 Chrome/Edge/Safari');return;}
+  speechSynthesis.cancel();
+  let i=0;
+  const playNext=()=>{
+    if(i>=IELTS_WORDS.length)return;
+    const u=new SpeechSynthesisUtterance(IELTS_WORDS[i++].w);
+    u.lang='en-GB';u.rate=0.85;
+    u.onend=playNext;
+    speechSynthesis.speak(u);
+  };
+  playNext();
+}
+// 标记「已掌握」（按天记录，第二天清零重来）
+function toggleIeltsMaster(idx){
+  const key='ielts_learned_'+dateKey(new Date());
+  const map=DB.get(key,{});
+  if(map[idx])delete map[idx];else map[idx]=true;
+  DB.set(key,map);
+  renderEnglishStudy();
+}
+function ieltsLearnedCount(){
+  const map=DB.get('ielts_learned_'+dateKey(new Date()),{});
+  return Object.keys(map).length;
+}
+
 function renderEnglishStudy(){
-  const d=new Date().getDay(); // 0=周日 … 6=周六
-  const item=DAILY_STUDY[d]||DAILY_STUDY[1];
   const badge=document.getElementById('studyDayBadge');
-  if(badge)badge.textContent=['周日','周一','周二','周三','周四','周五','周六'][d];
+  if(badge)badge.textContent='雅思 · 每日50词';
+  const learned=ieltsLearnedCount();
+  const learnedMap=DB.get('ielts_learned_'+dateKey(new Date()),{});
+  const wordsHtml=IELTS_WORDS.map((it,i)=>{
+    const done=!!learnedMap[i];
+    return `<div class="ielts-word">
+      <button class="ielts-play" onclick="speakWord('${it.w}')" title="朗读发音">🔊</button>
+      <span class="ielts-wtext">${it.w}</span><span class="ielts-ipa">${it.ipa}</span><span class="ielts-pos">${it.pos}</span>
+      <span class="ielts-cn">${it.cn}</span>
+      <button class="ielts-master ${done?'done':''}" onclick="toggleIeltsMaster(${i})">${done?'✓ 已掌握':'掌握'}</button>
+    </div>`;
+  }).join('');
+
   const el=document.getElementById('dailyStudyContent');
   if(!el)return;
   el.innerHTML=`
-    <div class="study-block">
-      <div class="study-label">📝 每日一词</div>
-      <div class="study-word">${item.word}<span class="study-phon">${item.phonetic}</span></div>
-      <div class="study-mean">${item.meaning}</div>
-      <div class="study-eg">${item.example}</div>
+    <div class="ielts-progress">
+      <div style="font-size:13px;color:var(--text-secondary)">📅 今日已掌握 <b style="color:var(--primary)">${learned}</b> / 50</div>
+      <button class="btn btn-outline btn-sm" onclick="speakAllIelts()">🔊 朗读全部</button>
     </div>
-    <div class="study-block">
-      <div class="study-label">💬 每日一句</div>
-      <div class="study-sentence">${item.sentence}</div>
-      <div class="study-trans">${item.trans}</div>
+    <div class="ielts-words">${wordsHtml}</div>
+
+    <div class="ielts-four">
+      <div class="ef"><div class="ef-t">🎧 听力</div><div class="ef-d">精听 1 段 Section 3，注意同义替换与连读弱读。</div></div>
+      <div class="ef"><div class="ef-t">📖 阅读</div><div class="ef-d">练 5 道 TRUE/FALSE/NOT GIVEN，先定位再判断。</div></div>
+      <div class="ef"><div class="ef-t">✍️ 写作</div><div class="ef-d">用今日 3 个词写 1 句学术表达，背 2 个连接词。</div></div>
+      <div class="ef"><div class="ef-t">🗣️ 口语</div><div class="ef-d">用今日单词造 1 个 Part 2 长句，录音频自检发音。</div></div>
+    </div>
+
+    <div class="study-block" style="margin-top:12px">
+      <div class="study-label">💬 每日一句（写作/口语通用）</div>
+      <div class="study-sentence">A balanced approach is crucial to achieving long-term benefits.</div>
+      <div class="study-trans">平衡的方式对实现长期收益至关重要。</div>
     </div>
     <div class="study-block study-tip">
       <div class="study-label">💡 学习提示</div>
-      <div>${item.tip}</div>
+      <div>每天 50 词：先点 🔊 跟读 2 遍 → 盖住释义自测 → 标记「已掌握」；错词第二天重来。IELTS 用英式发音，重点练听辨与拼写。</div>
     </div>`;
 }
 
